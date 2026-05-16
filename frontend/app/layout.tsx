@@ -22,6 +22,28 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
+        {/* Suppress MediaPipe WASM info logs before Next.js dev overlay hooks in */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          (function() {
+            var _origError = console.error;
+            var _origWarn = console.warn;
+            var _origLog = console.log;
+            var _origInfo = console.info;
+            function _isWASMLog(s) {
+              return typeof s === 'string' && (
+                s.indexOf('XNNPACK') !== -1 ||
+                s.indexOf('INFO:') !== -1 ||
+                s.indexOf('OpenGL error checking') !== -1 ||
+                s.indexOf('face_landmarker_graph') !== -1 ||
+                s.indexOf('gl_context.cc') !== -1
+              );
+            }
+            console.error = function() { if (_isWASMLog(arguments[0])) return; _origError.apply(console, arguments); };
+            console.warn  = function() { if (_isWASMLog(arguments[0])) return; _origWarn.apply(console, arguments); };
+            console.info  = function() { if (_isWASMLog(arguments[0])) return; _origInfo.apply(console, arguments); };
+            console.log   = function() { if (_isWASMLog(arguments[0])) return; _origLog.apply(console, arguments); };
+          })();
+        `}} />
       </head>
       <body>{children}</body>
     </html>
