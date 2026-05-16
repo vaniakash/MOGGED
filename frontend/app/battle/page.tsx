@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Zap, SkipForward, CheckCircle2, Clock, Cpu, Copy, Check, Link2, LogIn } from 'lucide-react';
 import { getSocket } from '@/lib/socket';
@@ -32,7 +31,6 @@ interface MatchResult {
 }
 
 function BattlePageInner() {
-  const searchParams = useSearchParams();
   const [phase, setPhase]             = useState<Phase>('idle');
   const [socket, setSocket]           = useState<Socket | null>(null);
   const [roomId, setRoomId]           = useState<string | null>(null);
@@ -51,8 +49,11 @@ function BattlePageInner() {
 
   // Auto-enter friend lobby if ?mode=friend in URL
   useEffect(() => {
-    if (searchParams?.get('mode') === 'friend') setPhase('friend_lobby');
-  }, [searchParams]);
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('mode') === 'friend') setPhase('friend_lobby');
+    }
+  }, []);
 
   // SERVER-SYNCED countdown state
   const [countdown, setCountdown]     = useState<number | null>(null);
