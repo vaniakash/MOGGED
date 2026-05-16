@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Zap, SkipForward, CheckCircle2, Clock, Cpu, Copy, Check, Link2, LogIn } from 'lucide-react';
@@ -31,7 +31,7 @@ interface MatchResult {
   eloResult?: { newRatingA: number; newRatingB: number; changeA: number; changeB: number };
 }
 
-export default function BattlePage() {
+function BattlePageInner() {
   const searchParams = useSearchParams();
   const [phase, setPhase]             = useState<Phase>('idle');
   const [socket, setSocket]           = useState<Socket | null>(null);
@@ -534,5 +534,13 @@ export default function BattlePage() {
         </AnimatePresence>
       </main>
     </div>
+  );
+}
+
+export default function BattlePage() {
+  return (
+    <Suspense fallback={null}>
+      <BattlePageInner />
+    </Suspense>
   );
 }
