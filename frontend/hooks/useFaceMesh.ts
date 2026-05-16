@@ -103,15 +103,29 @@ export function useFaceMesh(videoRef: React.RefObject<HTMLVideoElement | null>) 
           try {
             // Next.js dev server catches WASM stderr as an error overlay. 
             // TFLite logs "INFO: Created TensorFlow Lite XNNPACK delegate for CPU" on first inference.
+            const origLog = console.log;
+            const origWarn = console.warn;
+            const origInfo = console.info;
             const origError = console.error;
+
+            const silencer = (...args: any[]) => {
+              if (typeof args[0] === 'string' && (args[0].includes('XNNPACK delegate') || args[0].includes('OpenGL error checking') || args[0].includes('INFO:'))) return;
+              origLog(...args); // Fallback to log for unmatched
+            };
+
+            console.log = silencer;
+            console.warn = silencer;
+            console.info = silencer;
             console.error = (...args: any[]) => {
-              if (typeof args[0] === 'string' && args[0].includes('XNNPACK delegate')) return;
-              if (typeof args[0] === 'string' && args[0].includes('OpenGL error checking')) return;
+              if (typeof args[0] === 'string' && (args[0].includes('XNNPACK delegate') || args[0].includes('OpenGL error checking') || args[0].includes('INFO:'))) return;
               origError(...args);
             };
 
             const result = landmarkerRef.current.detectForVideo(video, now);
             
+            console.log = origLog;
+            console.warn = origWarn;
+            console.info = origInfo;
             console.error = origError;
             if (result.faceLandmarks && result.faceLandmarks.length > 0) {
               setFaceDetected(true);
@@ -155,13 +169,29 @@ export function useFaceMesh(videoRef: React.RefObject<HTMLVideoElement | null>) 
     return () => {
       stopAnalysis();
       try { 
+        const origLog = console.log;
+        const origWarn = console.warn;
+        const origInfo = console.info;
         const origError = console.error;
+
+        const silencer = (...args: any[]) => {
+          if (typeof args[0] === 'string' && (args[0].includes('XNNPACK delegate') || args[0].includes('OpenGL error checking') || args[0].includes('INFO:'))) return;
+          origLog(...args); 
+        };
+
+        console.log = silencer;
+        console.warn = silencer;
+        console.info = silencer;
         console.error = (...args: any[]) => {
-          if (typeof args[0] === 'string' && args[0].includes('XNNPACK delegate')) return;
-          if (typeof args[0] === 'string' && args[0].includes('OpenGL error checking')) return;
+          if (typeof args[0] === 'string' && (args[0].includes('XNNPACK delegate') || args[0].includes('OpenGL error checking') || args[0].includes('INFO:'))) return;
           origError(...args);
         };
+
         landmarkerRef.current?.close(); 
+
+        console.log = origLog;
+        console.warn = origWarn;
+        console.info = origInfo;
         console.error = origError;
       } catch {}
     };
