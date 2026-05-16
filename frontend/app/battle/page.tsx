@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, SkipForward, CheckCircle2, Clock, Cpu } from 'lucide-react';
+import { Zap, SkipForward, CheckCircle2, Clock, Cpu, Copy, Check, Link2, LogIn } from 'lucide-react';
 import { getSocket } from '@/lib/socket';
 import { useFaceMesh } from '@/hooks/useFaceMesh';
 import { useWebRTC } from '@/hooks/useWebRTC';
@@ -12,7 +13,6 @@ import ResultScreen from '@/components/ResultScreen';
 import VideoPanel from '@/components/VideoPanel';
 import QueueScreen from '@/components/QueueScreen';
 
-// Universal UUID — crypto.randomUUID() unsupported on older Android browsers
 function genUUID(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
@@ -21,7 +21,7 @@ function genUUID(): string {
   });
 }
 
-type Phase = 'idle' | 'queuing' | 'connected' | 'analyzing' | 'waiting_opponent' | 'result';
+type Phase = 'idle' | 'friend_lobby' | 'queuing' | 'connected' | 'analyzing' | 'waiting_opponent' | 'result';
 
 interface MatchResult {
   scoreA: { score: FaceScore; traits: string[] };
@@ -32,6 +32,7 @@ interface MatchResult {
 }
 
 export default function BattlePage() {
+  const searchParams = useSearchParams();
   const [phase, setPhase]             = useState<Phase>('idle');
   const [socket, setSocket]           = useState<Socket | null>(null);
   const [roomId, setRoomId]           = useState<string | null>(null);
@@ -41,6 +42,17 @@ export default function BattlePage() {
   const [mySocketId, setMySocketId]   = useState('');
   const [opponentLeft, setOpponentLeft] = useState(false);
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
+
+  // Friend battle state
+  const [privateCode,  setPrivateCode]  = useState<string | null>(null);
+  const [joinCode,     setJoinCode]     = useState('');
+  const [copied,       setCopied]       = useState(false);
+  const [privateError, setPrivateError] = useState<string | null>(null);
+
+  // Auto-enter friend lobby if ?mode=friend in URL
+  useEffect(() => {
+    if (searchParams?.get('mode') === 'friend') setPhase('friend_lobby');
+  }, [searchParams]);
 
   // SERVER-SYNCED countdown state
   const [countdown, setCountdown]     = useState<number | null>(null);
@@ -148,7 +160,11 @@ export default function BattlePage() {
       setPhase('connected');
       setOpponentLeft(false);
       peerReadySentRef.current = false;
+      setPrivateCode(null);
     });
+
+    s.on('private_room_created', ({ code }: { code: string }) => setPrivateCode(code));
+    s.on('private_room_error',   ({ message }: { message: string }) => setPrivateError(message));
 
     // !! SERVER-SYNCED COUNTDOWN !!
     // Server fires this when BOTH peers have signalled peer_ready
@@ -256,6 +272,89 @@ export default function BattlePage() {
       {/* ── MAIN ── */}
       <main className="page-content">
         <AnimatePresence mode="wait">
+
+          {/* FRIEND LOBBY */}
+          {phase === 'friend_lobby' && (
+            <motion.div key="friend" className="container-sm text-center"
+              initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+
+              <div className="font-display gradient-text" style={{ fontSize: 42, marginBottom: 8 }}>⚔️ FRIEND BATTLE</div>
+              <p className="text-secondary mb-8" style={{ fontSize: 14 }}>Challenge a specific friend — share a code or enter theirs</p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+
+                {/* CREATE ROOM */}
+                <div className="card" style={{ padding: 24, borderRadius: 20, borderColor: 'rgba(0,245,212,0.35)' }}>
+                  <div className="font-display neon-cyan mb-3" style={{ fontSize: 18 }}>CREATE ROOM</div>
+                  <p className="text-muted mb-4" style={{ fontSize: 12 }}>Generate a code and share it with your friend</p>
+                  {privateCode ? (
+                    <>
+                      <div className="font-display text-center mb-3"
+                        style={{ fontSize: 36, color: '#00f5d4', letterSpacing: '0.2em',
+                          textShadow: '0 0 24px rgba(0,245,212,0.6)', background: 'rgba(0,245,212,0.06)',
+                          padding: '12px 8px', borderRadius: 12, border: '1px solid rgba(0,245,212,0.3)' }}>
+                        {privateCode}
+                      </div>
+                      <button className="btn btn-ghost btn-sm w-full" style={{ width: '100%' }}
+                        onClick={() => { navigator.clipboard.writeText(privateCode); setCopied(true); setTimeout(() => setCopied(false), 2000); }}>
+                        {copied ? <><Check size={14} color="#4ade80" /> Copied!</> : <><Copy size={14} /> Copy Code</>}
+                      </button>
+                      <p className="text-muted mt-3" style={{ fontSize: 11 }}>Waiting for friend to join<span className="loading-dots"><span>.</span><span>.</span><span>.</span></span></p>
+                    </>
+                  ) : (
+                    <button className="btn btn-primary w-full" style={{ width: '100%' }}
+                      onClick={() => {
+                        const sid = localStorage.getItem('sessionId') || genUUID();
+                        localStorage.setItem('sessionId', sid);
+                        socket?.emit('create_private_room', { sessionId: sid });
+                        setPrivateError(null);
+                      }}>
+                      <Link2 size={15} /> Generate Code
+                    </button>
+                  )}
+                </div>
+
+                {/* JOIN ROOM */}
+                <div className="card" style={{ padding: 24, borderRadius: 20, borderColor: 'rgba(168,85,247,0.35)' }}>
+                  <div className="font-display neon-purple mb-3" style={{ fontSize: 18 }}>JOIN ROOM</div>
+                  <p className="text-muted mb-4" style={{ fontSize: 12 }}>Enter the code your friend shared with you</p>
+                  <input
+                    type="text" maxLength={6} placeholder="e.g. A3F8X2"
+                    value={joinCode}
+                    onChange={e => { setJoinCode(e.target.value.toUpperCase()); setPrivateError(null); }}
+                    style={{
+                      width: '100%', background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(168,85,247,0.4)', borderRadius: 10,
+                      padding: '10px 12px', color: '#fff', fontSize: 20,
+                      fontFamily: 'var(--font-display)', letterSpacing: '0.2em',
+                      textAlign: 'center', marginBottom: 12, outline: 'none',
+                    }}
+                  />
+                  <button className="btn w-full" style={{ width: '100%', background: 'linear-gradient(135deg,#a855f7,#7c3aed)', color: '#fff', border: 'none' }}
+                    disabled={joinCode.length < 4}
+                    onClick={() => {
+                      const sid = localStorage.getItem('sessionId') || genUUID();
+                      localStorage.setItem('sessionId', sid);
+                      socket?.emit('join_private_room', { code: joinCode, sessionId: sid });
+                      setPrivateError(null);
+                    }}>
+                    <LogIn size={15} /> Join Battle
+                  </button>
+                </div>
+              </div>
+
+              {privateError && (
+                <motion.div className="card card-pink text-center" style={{ padding: '10px 16px', borderRadius: 12, marginBottom: 16 }}
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <span className="neon-pink" style={{ fontSize: 13 }}>⚠️ {privateError}</span>
+                </motion.div>
+              )}
+
+              <button className="btn btn-ghost" style={{ fontSize: 13 }} onClick={() => { setPhase('idle'); setPrivateCode(null); setJoinCode(''); }}>
+                ← Back
+              </button>
+            </motion.div>
+          )}
 
           {/* IDLE */}
           {phase === 'idle' && (

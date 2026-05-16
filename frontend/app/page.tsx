@@ -173,6 +173,25 @@ export default function HomePage() {
           ENTER THE ARENA
         </motion.button>
 
+        {/* Divider */}
+        <div className="flex items-center gap-3 my-5">
+          <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+          <span className="text-muted" style={{ fontSize: 12, fontWeight: 600 }}>OR</span>
+          <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+        </div>
+
+        {/* Friend Battle */}
+        <motion.button
+          id="friend-battle-btn"
+          className="btn btn-ghost w-full"
+          style={{ width: '100%', borderRadius: 14, borderColor: 'rgba(168,85,247,0.4)', color: '#a855f7' }}
+          whileHover={{ scale: 1.02, borderColor: 'rgba(168,85,247,0.8)' }}
+          whileTap={{ scale: 0.97 }}
+          onClick={() => router.push('/battle?mode=friend')}
+        >
+          <Link2 size={17} /> CHALLENGE A FRIEND
+        </motion.button>
+
         <p className="text-center text-muted text-xs mt-4">
           Webcam required · 18+ · Entertainment purposes only
         </p>

@@ -12,20 +12,29 @@ const Match = require('./models/Match');
 const app    = express();
 const server = http.createServer(app);
 
-const ALLOWED_ORIGINS = [
-  process.env.CLIENT_URL || 'http://localhost:3000',
-  'http://localhost:3000',
-  'http://10.202.98.220:3000',
-  'https://2a55-2402-8100-2c39-8c95-7062-99ec-483a-3b9e.ngrok-free.app',
-  'https://5387-2402-8100-2c39-8c95-7062-99ec-483a-3b9e.ngrok-free.app',
-];
+// Dynamic CORS — accepts any Vercel preview/prod URL + localhost + ngrok
+function isAllowedOrigin(origin) {
+  if (!origin) return true; // server-to-server
+  if (origin === 'http://localhost:3000') return true;
+  if (origin === 'http://10.202.98.220:3000') return true;
+  if (origin.endsWith('.vercel.app')) return true;       // all Vercel URLs
+  if (origin.includes('ngrok-free.app')) return true;   // ngrok dev tunnels
+  if (origin.includes('onrender.com')) return true;     // render previews
+  if (process.env.CLIENT_URL && origin === process.env.CLIENT_URL) return true;
+  return false;
+}
+
+const corsOptions = {
+  origin: (origin, cb) => cb(null, isAllowedOrigin(origin)),
+  credentials: true,
+};
 
 const io = new Server(server, {
-  cors: { origin: ALLOWED_ORIGINS, methods: ['GET', 'POST'], credentials: true },
+  cors: { ...corsOptions, methods: ['GET', 'POST'] },
   transports: ['websocket', 'polling'],
 });
 
-app.use(cors({ origin: ALLOWED_ORIGINS, credentials: true }));
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // ── MongoDB ────────────────────────────────────────────────────────────────
@@ -38,11 +47,12 @@ if (process.env.MONGODB_URI) {
 }
 
 // ── In-memory state ────────────────────────────────────────────────────────
-const waitingQueue   = [];         // [{ socketId, sessionId }]
-const rooms          = new Map();  // roomId → RoomState
-const socketToRoom   = new Map();  // socketId → roomId
-const socketToSession= new Map();  // socketId → sessionId
-const roomTimers     = new Map();  // roomId → NodeJS.Timeout
+const waitingQueue    = [];         // [{ socketId, sessionId }]
+const rooms           = new Map();  // roomId → RoomState
+const socketToRoom    = new Map();  // socketId → roomId
+const socketToSession = new Map();  // socketId → sessionId
+const roomTimers      = new Map();  // roomId → timer
+const privateRooms    = new Map();  // code → { socketId, sessionId }  (friend battle)
 
 const COUNTDOWN_SECS = 10;
 
@@ -207,6 +217,53 @@ async function resolveMatch(roomId) {
 io.on('connection', (socket) => {
   console.log(`🔌 Connected: ${socket.id}`);
 
+  // ── PRIVATE ROOM — Create ───────────────────────────────────────────────
+  // Friend generates a short code and waits; other friend joins with the code
+  socket.on('create_private_room', ({ sessionId }) => {
+    // Remove any existing private room this socket created
+    for (const [code, data] of privateRooms.entries()) {
+      if (data.socketId === socket.id) privateRooms.delete(code);
+    }
+    const code = Math.random().toString(36).slice(2, 8).toUpperCase(); // e.g. "A3F8X2"
+    const sid  = sessionId || socketToSession.get(socket.id) || uuidv4();
+    socketToSession.set(socket.id, sid);
+    privateRooms.set(code, { socketId: socket.id, sessionId: sid });
+    socket.emit('private_room_created', { code });
+    console.log(`🔒 Private room created: ${code} by ${socket.id}`);
+  });
+
+  // ── PRIVATE ROOM — Join ─────────────────────────────────────────────────
+  socket.on('join_private_room', ({ code, sessionId }) => {
+    const entry = privateRooms.get(code.toUpperCase());
+    if (!entry) {
+      socket.emit('private_room_error', { message: 'Room not found. Check the code and try again.' });
+      return;
+    }
+    if (entry.socketId === socket.id) {
+      socket.emit('private_room_error', { message: 'You cannot join your own room!' });
+      return;
+    }
+    const creatorSocket = io.sockets.sockets.get(entry.socketId);
+    if (!creatorSocket) {
+      privateRooms.delete(code.toUpperCase());
+      socket.emit('private_room_error', { message: 'Room creator disconnected. Ask them to create a new room.' });
+      return;
+    }
+    // Match the two friends directly
+    const sid = sessionId || socketToSession.get(socket.id) || uuidv4();
+    socketToSession.set(socket.id, sid);
+    privateRooms.delete(code.toUpperCase());
+
+    const userA = { socketId: entry.socketId, sessionId: entry.sessionId };
+    const userB = { socketId: socket.id,       sessionId: sid };
+    const roomId = createRoom(userA, userB);
+    creatorSocket.join(roomId);
+    socket.join(roomId);
+    creatorSocket.emit('matched', { roomId, role: 'initiator', private: true });
+    socket.emit('matched',        { roomId, role: 'receiver',  private: true });
+    console.log(`🤝 Private match: ${entry.socketId} ↔ ${socket.id} (code ${code})`);
+  });
+
   // ── Join queue ────────────────────────────────────────────────────────
   socket.on('join_queue', ({ sessionId }) => {
     const sid = sessionId || uuidv4();
@@ -288,6 +345,10 @@ io.on('connection', (socket) => {
   // ── Disconnect ─────────────────────────────────────────────────────────
   socket.on('disconnect', () => {
     console.log(`❌ Disconnected: ${socket.id}`);
+    // Clean up private room if this socket was a creator
+    for (const [code, data] of privateRooms.entries()) {
+      if (data.socketId === socket.id) { privateRooms.delete(code); break; }
+    }
     removeFromQueue(socket.id);
     const roomId = socketToRoom.get(socket.id);
     if (roomId) {
