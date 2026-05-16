@@ -126,16 +126,16 @@ function BattlePageInner() {
     }
   }, [peerConnected, remoteStream, socket, roomId]);
 
-  // 20s timeout: send peer_ready even if WebRTC stream never arrives
+  // 10s timeout: send peer_ready even if WebRTC stream never arrives
   useEffect(() => {
     if (phase === 'connected' && socket && roomId && !peerReadySentRef.current) {
       peerReadyTimeoutRef.current = setTimeout(() => {
         if (!peerReadySentRef.current && socket && roomId) {
           peerReadySentRef.current = true;
           socket.emit('peer_ready', { roomId });
-          console.log('[Battle] peer_ready sent (20s timeout fallback)');
+          console.log('[Battle] peer_ready sent (10s timeout fallback)');
         }
-      }, 20000);
+      }, 10000);
     }
     return () => {
       if (peerReadyTimeoutRef.current) clearTimeout(peerReadyTimeoutRef.current);
