@@ -144,66 +144,63 @@ function BattlePageInner() {
     console.log('[Battle] Score submitted:', score.total);
   }, [scoreSubmitted, getFinalScore, socket, roomId, stopAnalysis]);
 
-  // ── Socket setup ────────────────────────────────────────────────────────
+  // ── Refs so socket handlers always call latest callbacks without re-init ──
+  const submitScoreRef        = useRef(submitScore);
+  const startAnalysisRef      = useRef(startAnalysis);
+  const stopAnalysisRef       = useRef(stopAnalysis);
+  const startLocalCountdownRef= useRef(startLocalCountdown);
+  useEffect(() => { submitScoreRef.current         = submitScore;        }, [submitScore]);
+  useEffect(() => { startAnalysisRef.current       = startAnalysis;      }, [startAnalysis]);
+  useEffect(() => { stopAnalysisRef.current        = stopAnalysis;       }, [stopAnalysis]);
+  useEffect(() => { startLocalCountdownRef.current = startLocalCountdown;}, [startLocalCountdown]);
+
+  // ── Socket setup (runs ONCE on mount — no dependency churn) ─────────────
   useEffect(() => {
     const s = getSocket();
     s.connect();
     setSocket(s);
-    setMySocketId(s.id || '');
 
     s.on('connect', () => setMySocketId(s.id || ''));
-
     s.on('queue_position', ({ position }: { position: number }) => setQueuePos(position));
 
     s.on('matched', ({ roomId: rid, role: r }: { roomId: string; role: 'initiator' | 'receiver' }) => {
-      setRoomId(rid);
-      setRole(r);
-      setPhase('connected');
-      setOpponentLeft(false);
-      peerReadySentRef.current = false;
-      setPrivateCode(null);
+      setRoomId(rid); setRole(r); setPhase('connected');
+      setOpponentLeft(false); peerReadySentRef.current = false; setPrivateCode(null);
     });
 
     s.on('private_room_created', ({ code }: { code: string }) => setPrivateCode(code));
     s.on('private_room_error',   ({ message }: { message: string }) => setPrivateError(message));
 
-    // !! SERVER-SYNCED COUNTDOWN !!
-    // Server fires this when BOTH peers have signalled peer_ready
     s.on('countdown_start', ({ serverTime, durationMs }: { serverTime: number; durationMs: number }) => {
-      console.log('[Battle] countdown_start received from server:', { serverTime, durationMs });
       setPhase('analyzing');
-      startLocalCountdown(serverTime, durationMs);
-      startAnalysis(); // begin FaceMesh on this device
+      startLocalCountdownRef.current(serverTime, durationMs);
+      startAnalysisRef.current();
     });
 
-    // Server deadline: submit whatever score we have NOW
-    s.on('submit_now', () => {
-      console.log('[Battle] submit_now received from server');
-      submitScore();
-    });
+    s.on('submit_now', () => submitScoreRef.current());
 
     s.on('opponent_left', () => {
       setOpponentLeft(true);
-      stopAnalysis();
+      stopAnalysisRef.current();
       if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
       setCountdown(null);
       setTimeout(() => setOpponentLeft(false), 3500);
     });
 
     s.on('match_result', (r: MatchResult) => {
-      setMatchResult(r);
-      setPhase('result');
-      stopAnalysis();
+      setMatchResult(r); setPhase('result');
+      stopAnalysisRef.current();
       if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
     });
 
     return () => {
       s.off('connect'); s.off('queue_position'); s.off('matched');
+      s.off('private_room_created'); s.off('private_room_error');
       s.off('countdown_start'); s.off('submit_now');
       s.off('opponent_left'); s.off('match_result');
       s.disconnect();
     };
-  }, [stopAnalysis, startAnalysis, startLocalCountdown, submitScore]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Auto-submit when local countdown hits 0 ─────────────────────────────
   useEffect(() => {
@@ -307,7 +304,9 @@ function BattlePageInner() {
                       onClick={() => {
                         const sid = localStorage.getItem('sessionId') || genUUID();
                         localStorage.setItem('sessionId', sid);
-                        socket?.emit('create_private_room', { sessionId: sid });
+                        const s = getSocket();
+                        if (!s.connected) s.connect();
+                        s.emit('create_private_room', { sessionId: sid });
                         setPrivateError(null);
                       }}>
                       <Link2 size={15} /> Generate Code
@@ -336,7 +335,9 @@ function BattlePageInner() {
                     onClick={() => {
                       const sid = localStorage.getItem('sessionId') || genUUID();
                       localStorage.setItem('sessionId', sid);
-                      socket?.emit('join_private_room', { code: joinCode, sessionId: sid });
+                      const s = getSocket();
+                      if (!s.connected) s.connect();
+                      s.emit('join_private_room', { code: joinCode, sessionId: sid });
                       setPrivateError(null);
                     }}>
                     <LogIn size={15} /> Join Battle
