@@ -154,7 +154,16 @@ export function useFaceMesh(videoRef: React.RefObject<HTMLVideoElement | null>) 
   useEffect(() => {
     return () => {
       stopAnalysis();
-      try { landmarkerRef.current?.close(); } catch {}
+      try { 
+        const origError = console.error;
+        console.error = (...args: any[]) => {
+          if (typeof args[0] === 'string' && args[0].includes('XNNPACK delegate')) return;
+          if (typeof args[0] === 'string' && args[0].includes('OpenGL error checking')) return;
+          origError(...args);
+        };
+        landmarkerRef.current?.close(); 
+        console.error = origError;
+      } catch {}
     };
   }, [stopAnalysis]);
 
