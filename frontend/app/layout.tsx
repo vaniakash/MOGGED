@@ -22,26 +22,45 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
-        {/* Suppress MediaPipe WASM info logs before Next.js dev overlay hooks in */}
+        {/* Suppress MediaPipe WASM info logs — must run before Next.js dev overlay registers */}
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {
-            var _origError = console.error;
-            var _origWarn = console.warn;
-            var _origLog = console.log;
-            var _origInfo = console.info;
             function _isWASMLog(s) {
-              return typeof s === 'string' && (
+              if (typeof s !== 'string') return false;
+              return (
                 s.indexOf('XNNPACK') !== -1 ||
                 s.indexOf('INFO:') !== -1 ||
                 s.indexOf('OpenGL error checking') !== -1 ||
                 s.indexOf('face_landmarker_graph') !== -1 ||
-                s.indexOf('gl_context.cc') !== -1
+                s.indexOf('gl_context.cc') !== -1 ||
+                s.indexOf('TensorFlow Lite') !== -1
               );
             }
-            console.error = function() { if (_isWASMLog(arguments[0])) return; _origError.apply(console, arguments); };
-            console.warn  = function() { if (_isWASMLog(arguments[0])) return; _origWarn.apply(console, arguments); };
-            console.info  = function() { if (_isWASMLog(arguments[0])) return; _origInfo.apply(console, arguments); };
-            console.log   = function() { if (_isWASMLog(arguments[0])) return; _origLog.apply(console, arguments); };
+
+            // 1. Patch console methods
+            var _oe = console.error, _ow = console.warn, _ol = console.log, _oi = console.info;
+            console.error = function() { if (_isWASMLog(arguments[0])) return; _oe.apply(console, arguments); };
+            console.warn  = function() { if (_isWASMLog(arguments[0])) return; _ow.apply(console, arguments); };
+            console.info  = function() { if (_isWASMLog(arguments[0])) return; _oi.apply(console, arguments); };
+            console.log   = function() { if (_isWASMLog(arguments[0])) return; _ol.apply(console, arguments); };
+
+            // 2. Intercept window error events (capture phase = before Next.js handler)
+            window.addEventListener('error', function(e) {
+              if (_isWASMLog(e.message)) {
+                e.stopImmediatePropagation();
+                e.preventDefault();
+                return false;
+              }
+            }, true);
+
+            // 3. Intercept unhandled promise rejections too
+            window.addEventListener('unhandledrejection', function(e) {
+              var msg = e.reason && (e.reason.message || String(e.reason));
+              if (_isWASMLog(msg)) {
+                e.stopImmediatePropagation();
+                e.preventDefault();
+              }
+            }, true);
           })();
         `}} />
       </head>
