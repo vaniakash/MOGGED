@@ -101,7 +101,18 @@ export function useFaceMesh(videoRef: React.RefObject<HTMLVideoElement | null>) 
         const now = performance.now();
         if (now !== lastTime.current) {
           try {
+            // Next.js dev server catches WASM stderr as an error overlay. 
+            // TFLite logs "INFO: Created TensorFlow Lite XNNPACK delegate for CPU" on first inference.
+            const origError = console.error;
+            console.error = (...args: any[]) => {
+              if (typeof args[0] === 'string' && args[0].includes('XNNPACK delegate')) return;
+              if (typeof args[0] === 'string' && args[0].includes('OpenGL error checking')) return;
+              origError(...args);
+            };
+
             const result = landmarkerRef.current.detectForVideo(video, now);
+            
+            console.error = origError;
             if (result.faceLandmarks && result.faceLandmarks.length > 0) {
               setFaceDetected(true);
               const landmarks = result.faceLandmarks[0] as Landmark[];
