@@ -177,3 +177,7 @@ Face analysis runs **100% client-side** via MediaPipe FaceMesh (468 landmarks).
 - ✅ Next/skip button
 - ✅ Mobile responsive
 - ✅ Dark neon Gen-Z aesthetic
+
+
+
+pkill -f "node server.js" 2>/dev/null; sleep 1; cd backend && node server.js &

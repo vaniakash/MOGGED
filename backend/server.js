@@ -4,6 +4,7 @@ const http     = require('http');
 const { Server } = require('socket.io');
 const cors     = require('cors');
 const mongoose = require('mongoose');
+mongoose.set('bufferCommands', false);
 const { v4: uuidv4 } = require('uuid');
 const { calculateElo } = require('./utils/elo');
 const User  = require('./models/User');
