@@ -1,234 +1,249 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { Swords, Check, Camera, ScanFace, Trophy, ChevronRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { Zap, Bot, Trophy, Camera, Link2, Cpu, Swords } from 'lucide-react';
 
-const StepCard = ({ num, title, desc, icon }: any) => (
-  <div className="flex-1 rounded-2xl p-5 flex flex-col gap-3 w-full" style={{ background: 'rgba(20,20,20,0.6)', border: '1px solid rgba(255,255,255,0.05)' }}>
-    <div className="flex items-center gap-3">
-      <div className="w-6 h-6 flex items-center justify-center rounded bg-black border border-white/10 text-xs font-mono text-gray-400">
-        {num}
-      </div>
-      <h3 className="text-[10px] font-bold uppercase tracking-[0.15em] text-gray-200">{title}</h3>
-    </div>
-    <p className="text-[11px] text-gray-500 leading-relaxed flex gap-2 items-start mt-1">
-      <span className="mt-0.5">{icon}</span>
-      {desc}
-    </p>
-  </div>
-);
+const MEME_QUOTES = [
+  '"You either mog, or get mogged."',
+  '"The AI has no mercy. Neither do we."',
+  '"Your face is now data."',
+  '"NPC faces get exposed here."',
+  '"Hunter eyes vs NPC stare — who wins?"',
+];
 
 export default function HomePage() {
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
-  const [showSeo, setShowSeo] = useState(false);
+  const [quoteIdx, setQuoteIdx] = useState(0);
+  const [particles, setParticles] = useState<{ id: number; x: number; color: string; delay: number; dur: number }[]>([]);
 
   useEffect(() => {
-    setMounted(true);
+    const t = setInterval(() => setQuoteIdx(i => (i + 1) % MEME_QUOTES.length), 3200);
+    return () => clearInterval(t);
   }, []);
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "Omogle",
-    "applicationCategory": "EntertainmentApplication",
-    "description": "Live 1v1 face battle platform where strangers compete in real time while AI judges attractiveness, facial symmetry, and overall aura.",
-    "operatingSystem": "All",
-    "url": "https://omogle.vercel.app",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "USD"
-    }
-  };
-
-  if (!mounted) return null; // Avoid hydration mismatch on initial render
+  useEffect(() => {
+    setParticles(
+      Array.from({ length: 22 }, (_, i) => ({
+        id: i,
+        x: Math.random() * 100,
+        color: ['#ff2d78', '#00f5d4', '#a855f7', '#fbbf24'][i % 4],
+        delay: Math.random() * 6,
+        dur: 4 + Math.random() * 4,
+      }))
+    );
+  }, []);
 
   return (
-    <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#000', color: '#fff', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+    <main className="page-center" style={{ paddingTop: 48, paddingBottom: 48 }}>
 
-      {/* TOP BAR */}
-      <div className="w-full flex justify-between items-center px-4 py-3" style={{ backgroundColor: '#050505', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-        <div className="flex items-center gap-2">
-          <span className="text-xl">👻</span>
+      {/* Floating particles */}
+      {particles.map(p => (
+        <motion.div
+          key={p.id}
+          style={{
+            position: 'fixed',
+            bottom: -10,
+            left: `${p.x}%`,
+            width: 5,
+            height: 5,
+            borderRadius: '50%',
+            background: p.color,
+            boxShadow: `0 0 10px ${p.color}`,
+            pointerEvents: 'none',
+            zIndex: 0,
+          }}
+          animate={{ y: [0, -(700 + Math.random() * 400)], opacity: [0, 1, 1, 0], scale: [0, 1, 1, 0] }}
+          transition={{ duration: p.dur, repeat: Infinity, delay: p.delay, ease: 'easeOut' }}
+        />
+      ))}
+
+      {/* ── LOGO ─────────────────────────── */}
+      <motion.div
+        className="text-center mb-8"
+        initial={{ y: -60, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.8, ease: [0.34, 1.56, 0.64, 1] }}
+        style={{ position: 'relative', zIndex: 1 }}
+      >
+        <div className="flex items-center justify-center mb-3">
+          <img src="/omogle-logo.svg" alt="Ommogale" style={{ height: 80, objectFit: 'contain' }} />
         </div>
-        <div className="text-gray-400 font-mono flex-1 text-center" style={{ fontSize: '11px', letterSpacing: '0.05em' }}>
-          You're playing as a Guest. Click here to claim your rank with Google.
-        </div>
-        <button className="px-4 py-1.5 rounded-full border border-gray-700 text-gray-300 hover:bg-gray-800 transition-colors" style={{ fontSize: '9px', letterSpacing: '0.15em', fontWeight: 600 }}>
-          CLAIM
-        </button>
-      </div>
+        <p className="text-secondary text-lg">AI-Powered Face Battle Arena</p>
+      </motion.div>
 
-      {/* GLOW BACKGROUND */}
-      <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '1000px', height: '400px', background: 'radial-gradient(circle, rgba(168,85,247,0.12) 0%, rgba(0,0,0,0) 60%)', pointerEvents: 'none', zIndex: 0 }} />
-
-      <div className="flex-1 flex flex-col items-center justify-center px-4 w-full max-w-5xl mx-auto" style={{ position: 'relative', zIndex: 1, paddingBottom: '60px', paddingTop: '40px' }}>
-        
-        {/* TOP BADGE */}
-        <div className="flex items-center gap-2 px-3 py-1 rounded-full mb-6" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#a855f7', boxShadow: '0 0 10px #a855f7' }} />
-          <span className="text-gray-300 font-mono uppercase" style={{ fontSize: '9px', letterSpacing: '0.15em' }}>LIVE 1V1 MOG ARENA</span>
-        </div>
-
-        {/* LOGO */}
-        <h1 className="font-display tracking-tighter" style={{ fontSize: 'clamp(60px, 14vw, 150px)', lineHeight: 0.85, marginBottom: 24, textShadow: '0 0 50px rgba(255,255,255,0.2)', color: '#fff', fontWeight: 800 }}>
-          OMMOGLE
-        </h1>
-
-        {/* ONLINE BADGE */}
-        <div className="flex items-center gap-2 px-3 py-1 rounded-full mb-12" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#10b981', boxShadow: '0 0 10px #10b981' }} />
-          <span className="font-mono uppercase font-bold" style={{ fontSize: '9px', letterSpacing: '0.15em', color: '#10b981' }}>1501 ONLINE</span>
-        </div>
-
-        {/* MAIN CARD */}
-        <motion.div 
-          className="w-full max-w-3xl rounded-[32px] flex flex-col items-center justify-center cursor-pointer group mb-8"
-          style={{ background: 'linear-gradient(180deg, rgba(20,20,20,0.8) 0%, rgba(10,10,10,0.8) 100%)', border: '1px solid rgba(255,255,255,0.05)', padding: '60px 20px', boxShadow: '0 20px 40px rgba(0,0,0,0.6)' }}
-          whileHover={{ scale: 1.01, borderColor: 'rgba(255,255,255,0.1)' }}
-          whileTap={{ scale: 0.99 }}
-          onClick={() => router.push('/battle')}
-        >
-          <div className="relative mb-8">
-            <Swords size={56} strokeWidth={1} color="#fff" className="opacity-80 group-hover:opacity-100 transition-opacity drop-shadow-md" />
-            <motion.div 
-              className="absolute top-0 right-0 w-2 h-2 rounded-full bg-yellow-400"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: [0, 1, 0] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              style={{ transform: 'translate(50%, -50%)', boxShadow: '0 0 10px #facc15' }}
-            />
-          </div>
-          
-          <h2 className="text-xl sm:text-2xl tracking-[0.25em] font-bold text-white mb-8 text-center uppercase">ENTER THE ARENA</h2>
-          
-          <div className="flex items-center gap-2 px-4 py-2 rounded-full transition-colors group-hover:bg-[#064e3b]" style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-            <Check size={12} color="#10b981" />
-            <span className="text-[9px] uppercase tracking-[0.2em] font-bold" style={{ color: '#10b981' }}>VERIFIED · FIND MATCH</span>
-          </div>
-        </motion.div>
-
-        {/* 3 STEPS CARDS */}
-        <div className="w-full max-w-4xl flex flex-col md:flex-row items-center gap-4 mt-2">
-          <StepCard 
-            num="1" 
-            title="CAMERA CHECK" 
-            desc="Complete a quick camera check to get started." 
-            icon={<Camera size={14} className="opacity-70 mt-0.5" />} 
-          />
-          <ChevronRight size={16} className="hidden md:block text-gray-700 shrink-0" />
-          <StepCard 
-            num="2" 
-            title="SOLO PSL SCAN" 
-            desc="Take a Solo PSL Scan to verify you mog." 
-            icon={<span className="text-[12px] mt-0.5">🧪</span>} 
-          />
-          <ChevronRight size={16} className="hidden md:block text-gray-700 shrink-0" />
-          <StepCard 
-            num="3" 
-            title="COMPETE AND CLIMB THE RANKS" 
-            desc="Win matches, earn points, and climb the ladder." 
-            icon={<Swords size={14} className="text-gray-400 mt-0.5" />} 
-          />
-        </div>
-
-        {/* LEADERBOARD BUTTON */}
-        <motion.div 
-          className="w-full max-w-4xl rounded-2xl mt-6 p-5 flex items-center justify-between cursor-pointer group"
-          style={{ background: 'linear-gradient(90deg, rgba(30,20,0,0.6) 0%, rgba(15,15,15,0.6) 100%)', border: '1px solid rgba(251, 191, 36, 0.15)' }}
-          whileHover={{ scale: 1.01, borderColor: 'rgba(251, 191, 36, 0.3)' }}
-          onClick={() => router.push('/leaderboard')}
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(251, 191, 36, 0.1)' }}>
-              <Trophy size={18} color="#fbbf24" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-yellow-500">VIEW LEADERBOARD</span>
-              <span className="text-[11px] text-gray-500 mt-1">See top players and rankings.</span>
-            </div>
-          </div>
-          <ChevronRight size={16} className="text-gray-600 group-hover:text-yellow-500 transition-colors" />
-        </motion.div>
-
-        {/* SEO EXPANDABLE SECTION */}
-        <button 
-          onClick={() => setShowSeo(!showSeo)}
-          className="mt-16 text-[9px] font-bold tracking-[0.2em] uppercase text-gray-600 hover:text-gray-300 transition-colors flex items-center gap-2"
-        >
-          {showSeo ? 'HIDE ABOUT OMOGLE' : 'READ ABOUT OMOGLE'}
-          <motion.div animate={{ rotate: showSeo ? -90 : 90 }} transition={{ duration: 0.2 }}>
-            <ChevronRight size={12} />
+      {/* ── HERO CARD ────────────────────── */}
+      <motion.div
+        className="card card-purple container-sm mb-8"
+        style={{ padding: 32, position: 'relative', zIndex: 1 }}
+        initial={{ scale: 0.82, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: 0.18, duration: 0.7, ease: [0.34, 1.56, 0.64, 1] }}
+      >
+        {/* VS visual */}
+        <div className="flex items-center justify-center gap-6 mb-8">
+          <motion.div
+            className="avatar-xl flex items-center justify-center"
+            style={{
+              background: 'linear-gradient(135deg, rgba(0,245,212,0.18), rgba(0,245,212,0.04))',
+              border: '2px solid rgba(0,245,212,0.4)',
+              fontSize: 32,
+            }}
+            animate={{ rotate: [0, 5, 0, -5, 0] }}
+            transition={{ duration: 4, repeat: Infinity }}
+          >
+            🧑
           </motion.div>
-        </button>
 
-        <AnimatePresence>
-          {showSeo && (
-            <motion.div 
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="w-full max-w-3xl text-left overflow-hidden mt-8 border-t border-white/5 pt-8"
-            >
-              <h2 className="text-[12px] font-bold uppercase tracking-[0.2em] text-gray-300 mb-3">What is Omogle?</h2>
-              <p className="text-[11px] text-gray-500 mb-8 leading-relaxed">
-                Omogle is a live AI-powered face battle platform where users compete in realtime webcam matchups against random strangers worldwide. The platform uses artificial intelligence to analyze facial attractiveness, symmetry, confidence, and overall presence to determine winners. Players gain Elo points, climb leaderboards, and compete for top rankings in the global mog arena.
-              </p>
+          <motion.div
+            className="font-display"
+            style={{ fontSize: 48, color: '#a855f7', textShadow: '0 0 24px rgba(168,85,247,0.8)' }}
+            animate={{ scale: [1, 1.18, 1] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          >
+            VS
+          </motion.div>
 
-              <h2 className="text-[12px] font-bold uppercase tracking-[0.2em] text-gray-300 mb-3">How Omogle Works</h2>
-              <p className="text-[11px] text-gray-500 mb-8 leading-relaxed">
-                Users enter live 1v1 face battles using their webcam. Once matched, Omogle’s AI analyzes both participants in real time using face analysis technology and attractiveness scoring systems. Winners receive Elo rating increases while losers lose ranking points. The platform combines random video chat, competitive ranking systems, and AI-powered judging into a single social experience.
-              </p>
+          <motion.div
+            className="avatar-xl flex items-center justify-center"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255,45,120,0.18), rgba(255,45,120,0.04))',
+              border: '2px solid rgba(255,45,120,0.4)',
+              fontSize: 32,
+            }}
+            animate={{ rotate: [0, -5, 0, 5, 0] }}
+            transition={{ duration: 4, repeat: Infinity, delay: 0.5 }}
+          >
+            🧑
+          </motion.div>
+        </div>
 
-              <h2 className="text-[12px] font-bold uppercase tracking-[0.2em] text-gray-300 mb-3">Features</h2>
-              <ul className="text-[11px] text-gray-500 mb-12 leading-relaxed grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <li className="flex items-center gap-2"><div className="w-1 h-1 bg-gray-500 rounded-full"/> Live 1v1 webcam battles</li>
-                <li className="flex items-center gap-2"><div className="w-1 h-1 bg-gray-500 rounded-full"/> AI-powered attractiveness analysis</li>
-                <li className="flex items-center gap-2"><div className="w-1 h-1 bg-gray-500 rounded-full"/> Real-time face scoring</li>
-                <li className="flex items-center gap-2"><div className="w-1 h-1 bg-gray-500 rounded-full"/> Global Elo leaderboards</li>
-                <li className="flex items-center gap-2"><div className="w-1 h-1 bg-gray-500 rounded-full"/> Random stranger matchmaking</li>
-                <li className="flex items-center gap-2"><div className="w-1 h-1 bg-gray-500 rounded-full"/> Competitive ranking system</li>
-                <li className="flex items-center gap-2"><div className="w-1 h-1 bg-gray-500 rounded-full"/> Facial symmetry analysis</li>
-                <li className="flex items-center gap-2"><div className="w-1 h-1 bg-gray-500 rounded-full"/> Live online arena</li>
-              </ul>
-
-              <h2 className="text-[12px] font-bold uppercase tracking-[0.2em] text-gray-300 mb-6 text-center">FREQUENTLY ASKED QUESTIONS</h2>
-              <div className="flex flex-col gap-4">
-                {[
-                  { q: "What is Omogle?", a: "Omogle is an AI-powered live face battle platform where strangers compete in realtime webcam matchups and AI decides who wins based on attractiveness and facial analysis." },
-                  { q: "How does the AI judge faces?", a: "Omogle uses AI face analysis systems that evaluate facial symmetry, proportions, confidence, and overall appearance during live battles." },
-                  { q: "Is Omogle free?", a: "Yes, users can join live 1v1 face battles and compete in the arena for free." },
-                  { q: "Can I play with friends?", a: "Yes, Omogle supports private challenges and friend battles in addition to random matchmaking." },
-                  { q: "What is the Elo ranking system?", a: "Elo is a competitive ranking system that increases when players win battles and decreases when they lose." }
-                ].map((faq, idx) => (
-                  <div key={idx} className="p-4" style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.03)' }}>
-                    <h3 className="font-semibold text-[11px] uppercase tracking-wider text-gray-300 mb-2">
-                      {faq.q}
-                    </h3>
-                    <p className="text-[11px] text-gray-500 leading-relaxed">{faq.a}</p>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
+        {/* Meme quote */}
+        <AnimatePresence mode="wait">
+          <motion.p
+            key={quoteIdx}
+            className="text-secondary italic text-center mb-8 leading-relaxed"
+            style={{ fontSize: 15 }}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.45 }}
+          >
+            {MEME_QUOTES[quoteIdx]}
+          </motion.p>
         </AnimatePresence>
 
-        {/* FOOTER */}
-        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 mt-20 text-[9px] font-bold tracking-[0.2em] uppercase text-gray-600">
-          <a href="/privacy-policy" className="hover:text-gray-300 transition-colors">PRIVACY POLICY</a>
-          <span className="hidden sm:inline">·</span>
-          <a href="/terms" className="hover:text-gray-300 transition-colors">TERMS OF USE</a>
-          <span className="hidden sm:inline">·</span>
-          <a href="/settings" className="hover:text-gray-300 transition-colors">SETTINGS</a>
+        {/* Feature grid */}
+        <div className="grid-3 gap-3 mb-8" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)' }}>
+          {[
+            { icon: <Swords size={22} color="#00f5d4" />, label: 'Random Match' },
+            { icon: <Bot size={22} color="#a855f7" />,    label: 'AI Analysis' },
+            { icon: <Trophy size={22} color="#fbbf24" />, label: 'ELO Ranking' },
+          ].map(f => (
+            <div
+              key={f.label}
+              className="card text-center"
+              style={{ padding: '12px 8px', borderRadius: 14 }}
+            >
+              <div className="flex justify-center mb-2">{f.icon}</div>
+              <div className="text-xs text-secondary font-semibold">{f.label}</div>
+            </div>
+          ))}
         </div>
 
+        {/* CTA */}
+        <motion.button
+          id="enter-battle-btn"
+          className="btn btn-primary btn-xl w-full"
+          style={{ width: '100%', borderRadius: 16 }}
+          whileHover={{ scale: 1.025 }}
+          whileTap={{ scale: 0.96 }}
+          onClick={() => router.push('/battle')}
+        >
+          <Zap size={20} strokeWidth={2.5} />
+          ENTER THE ARENA
+        </motion.button>
+
+        {/* Divider */}
+        <div className="flex items-center gap-3 my-5">
+          <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+          <span className="text-muted" style={{ fontSize: 12, fontWeight: 600 }}>OR</span>
+          <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+        </div>
+
+        {/* Friend Battle */}
+        <motion.button
+          id="friend-battle-btn"
+          className="btn btn-ghost w-full"
+          style={{ width: '100%', borderRadius: 14, borderColor: 'rgba(168,85,247,0.4)', color: '#a855f7' }}
+          whileHover={{ scale: 1.02, borderColor: 'rgba(168,85,247,0.8)' }}
+          whileTap={{ scale: 0.97 }}
+          onClick={() => router.push('/battle?mode=friend')}
+        >
+          <Link2 size={17} /> CHALLENGE A FRIEND
+        </motion.button>
+
+        <p className="text-center text-muted text-xs mt-4">
+          Webcam required · 18+ · Entertainment purposes only
+        </p>
+      </motion.div>
+
+      {/* ── STATS ────────────────────────── */}
+      <motion.div
+        className="flex gap-8 text-center mb-12"
+        style={{ position: 'relative', zIndex: 1 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.45 }}
+      >
+        {[
+          { label: 'Battles Today', value: '12,847' },
+          { label: 'Moggers',       value: '4,231' },
+          { label: 'Avg Score',     value: '6.4' },
+        ].map(s => (
+          <div key={s.label}>
+            <div className="font-display neon-cyan" style={{ fontSize: 26 }}>{s.value}</div>
+            <div className="text-muted text-xs">{s.label}</div>
+          </div>
+        ))}
+      </motion.div>
+
+      {/* ── HOW IT WORKS ─────────────────── */}
+      <motion.div
+        className="container-sm"
+        style={{ position: 'relative', zIndex: 1 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.65 }}
+      >
+        <p className="text-center text-muted text-xs font-semibold uppercase tracking-widest mb-5">
+          How It Works
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {[
+            { step: '01', icon: <Camera size={18} color="#00f5d4" />, text: 'Allow camera access & join the queue' },
+            { step: '02', icon: <Link2 size={18} color="#a855f7" />,  text: 'Get matched with a random stranger via WebRTC' },
+            { step: '03', icon: <Cpu   size={18} color="#fbbf24" />, text: 'AI analyzes both faces in real-time' },
+            { step: '04', icon: <Swords size={18} color="#ff2d78"/>, text: 'Scores revealed — MOG or get MOGGED' },
+          ].map(item => (
+            <div key={item.step} className="card flex items-center gap-4" style={{ padding: '14px 16px', borderRadius: 14 }}>
+              <span className="neon-purple font-display" style={{ fontSize: 22, width: 30, flexShrink: 0 }}>{item.step}</span>
+              {item.icon}
+              <span className="text-secondary text-sm">{item.text}</span>
+            </div>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* ── FOOTER / LEGAL ─────────────────── */}
+      <div className="text-center mt-12" style={{ position: 'relative', zIndex: 1 }}>
+        <p className="text-secondary text-xs mb-3">We do not sell your data. The AI already roasted you for free.</p>
+        <div className="flex items-center justify-center gap-4 text-xs font-semibold" style={{ color: '#a855f7' }}>
+          <a href="#" className="hover:underline">Privacy Policy</a>
+          <span style={{ color: 'rgba(255,255,255,0.2)' }}>·</span>
+          <a href="#" className="hover:underline">Terms of Use</a>
+        </div>
       </div>
     </main>
   );
