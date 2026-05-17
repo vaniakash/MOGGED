@@ -1,38 +1,31 @@
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import { Swords, Check, Camera, ScanFace, Trophy, ChevronRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Zap, Link2, HelpCircle } from 'lucide-react';
 
-const MEME_QUOTES = [
-  '"You either mog, or get mogged."',
-  '"The AI has no mercy. Neither do we."',
-  '"Your face is now data."',
-  '"NPC faces get exposed here."',
-  '"Hunter eyes vs NPC stare — who wins?"',
-];
+const StepCard = ({ num, title, desc, icon }: any) => (
+  <div className="flex-1 rounded-2xl p-5 flex flex-col gap-3 w-full" style={{ background: 'rgba(20,20,20,0.6)', border: '1px solid rgba(255,255,255,0.05)' }}>
+    <div className="flex items-center gap-3">
+      <div className="w-6 h-6 flex items-center justify-center rounded bg-black border border-white/10 text-xs font-mono text-gray-400">
+        {num}
+      </div>
+      <h3 className="text-[10px] font-bold uppercase tracking-[0.15em] text-gray-200">{title}</h3>
+    </div>
+    <p className="text-[11px] text-gray-500 leading-relaxed flex gap-2 items-start mt-1">
+      <span className="mt-0.5">{icon}</span>
+      {desc}
+    </p>
+  </div>
+);
 
 export default function HomePage() {
   const router = useRouter();
-  const [quoteIdx, setQuoteIdx] = useState(0);
-  const [particles, setParticles] = useState<{ id: number; x: number; color: string; delay: number; dur: number }[]>([]);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const t = setInterval(() => setQuoteIdx(i => (i + 1) % MEME_QUOTES.length), 3200);
-    return () => clearInterval(t);
-  }, []);
-
-  useEffect(() => {
-    setParticles(
-      Array.from({ length: 22 }, (_, i) => ({
-        id: i,
-        x: Math.random() * 100,
-        color: ['#ff2d78', '#00f5d4', '#a855f7', '#fbbf24'][i % 4],
-        delay: Math.random() * 6,
-        dur: 4 + Math.random() * 4,
-      }))
-    );
+    setMounted(true);
   }, []);
 
   const jsonLd = {
@@ -50,220 +43,130 @@ export default function HomePage() {
     }
   };
 
+  if (!mounted) return null; // Avoid hydration mismatch on initial render
+
   return (
-    <main className="page-center" style={{ paddingTop: 64, paddingBottom: 64, minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#000', color: '#fff', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      {/* Floating particles */}
-      {particles.map(p => (
-        <motion.div
-          key={p.id}
-          style={{
-            position: 'fixed',
-            bottom: -10,
-            left: `${p.x}%`,
-            width: 5,
-            height: 5,
-            borderRadius: '50%',
-            background: p.color,
-            boxShadow: `0 0 10px ${p.color}`,
-            pointerEvents: 'none',
-            zIndex: 0,
-          }}
-          animate={{ y: [0, -(700 + Math.random() * 400)], opacity: [0, 1, 1, 0], scale: [0, 1, 1, 0] }}
-          transition={{ duration: p.dur, repeat: Infinity, delay: p.delay, ease: 'easeOut' }}
-        />
-      ))}
+      {/* TOP BAR */}
+      <div className="w-full flex justify-between items-center px-4 py-3" style={{ backgroundColor: '#050505', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+        <div className="flex items-center gap-2">
+          <span className="text-xl">👻</span>
+        </div>
+        <div className="text-gray-400 font-mono flex-1 text-center" style={{ fontSize: '11px', letterSpacing: '0.05em' }}>
+          You're playing as a Guest. Click here to claim your rank with Google.
+        </div>
+        <button className="px-4 py-1.5 rounded-full border border-gray-700 text-gray-300 hover:bg-gray-800 transition-colors" style={{ fontSize: '9px', letterSpacing: '0.15em', fontWeight: 600 }}>
+          CLAIM
+        </button>
+      </div>
 
-      {/* ── HERO SECTION ─────────────────────────── */}
-      <motion.div
-        className="text-center mb-6"
-        initial={{ y: -40, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.8, ease: [0.34, 1.56, 0.64, 1] }}
-        style={{ position: 'relative', zIndex: 1, marginTop: 20 }}
-      >
-        <h1 className="font-display flex flex-col" style={{ lineHeight: 0.85, letterSpacing: '0.01em', marginBottom: 24, textTransform: 'uppercase' }}>
-          <span className="gradient-text" style={{ fontSize: 'clamp(64px, 15vw, 140px)', textShadow: '0 0 40px rgba(168,85,247,0.3)' }}>OMOGLE</span>
-          <span style={{ fontSize: 'clamp(20px, 4vw, 36px)', color: '#00f5d4', marginTop: '16px', letterSpacing: '0.05em' }}>THE INTERNET’S FACE ARENA</span>
-        </h1>
+      {/* GLOW BACKGROUND */}
+      <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '1000px', height: '400px', background: 'radial-gradient(circle, rgba(168,85,247,0.12) 0%, rgba(0,0,0,0) 60%)', pointerEvents: 'none', zIndex: 0 }} />
+
+      <div className="flex-1 flex flex-col items-center justify-center px-4 w-full max-w-5xl mx-auto" style={{ position: 'relative', zIndex: 1, paddingBottom: '60px', paddingTop: '40px' }}>
         
-        <p className="text-secondary text-base md:text-xl font-medium mb-4 max-w-lg mx-auto leading-relaxed">
-          Live 1v1 face battles judged by AI. <br/>Compete against random strangers, gain Elo, and climb the global leaderboard.
-        </p>
-      </motion.div>
-
-      {/* ── HERO CARD (ARENA) ────────────────────── */}
-      <motion.div
-        className="card container-sm mb-16"
-        style={{ padding: '32px 24px', position: 'relative', zIndex: 1, background: 'rgba(10,10,14,0.6)', border: '1px solid rgba(255,255,255,0.05)' }}
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ delay: 0.18, duration: 0.7, ease: [0.34, 1.56, 0.64, 1] }}
-      >
-        {/* VS visual */}
-        <div className="flex items-center justify-center gap-3 sm:gap-6 mb-8">
-          <motion.div
-            className="avatar-xl flex items-center justify-center"
-            style={{
-              background: 'linear-gradient(135deg, rgba(0,245,212,0.1), rgba(0,245,212,0.02))',
-              border: '2px solid rgba(0,245,212,0.3)',
-              fontSize: 32,
-            }}
-            animate={{ rotate: [0, 5, 0, -5, 0] }}
-            transition={{ duration: 4, repeat: Infinity }}
-          >
-            🧑
-          </motion.div>
-
-          <motion.div
-            className="font-display"
-            style={{ fontSize: 48, color: '#4a4a5a', textShadow: '0 0 24px rgba(255,255,255,0.1)' }}
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-          >
-            VS
-          </motion.div>
-
-          <motion.div
-            className="avatar-xl flex items-center justify-center"
-            style={{
-              background: 'linear-gradient(135deg, rgba(255,45,120,0.1), rgba(255,45,120,0.02))',
-              border: '2px solid rgba(255,45,120,0.3)',
-              fontSize: 32,
-            }}
-            animate={{ rotate: [0, -5, 0, 5, 0] }}
-            transition={{ duration: 4, repeat: Infinity, delay: 0.5 }}
-          >
-            🧑
-          </motion.div>
+        {/* TOP BADGE */}
+        <div className="flex items-center gap-2 px-3 py-1 rounded-full mb-6" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#a855f7', boxShadow: '0 0 10px #a855f7' }} />
+          <span className="text-gray-300 font-mono uppercase" style={{ fontSize: '9px', letterSpacing: '0.15em' }}>LIVE 1V1 MOG ARENA</span>
         </div>
 
-        {/* Meme quote */}
-        <div style={{ height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
-          <AnimatePresence mode="wait">
-            <motion.p
-              key={quoteIdx}
-              className="text-secondary italic text-center leading-relaxed"
-              style={{ fontSize: 14, fontWeight: 500 }}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.45 }}
-            >
-              {MEME_QUOTES[quoteIdx]}
-            </motion.p>
-          </AnimatePresence>
+        {/* LOGO */}
+        <h1 className="font-display tracking-tighter" style={{ fontSize: 'clamp(60px, 14vw, 150px)', lineHeight: 0.85, marginBottom: 24, textShadow: '0 0 50px rgba(255,255,255,0.2)', color: '#fff', fontWeight: 800 }}>
+          OMMOGLE
+        </h1>
+
+        {/* ONLINE BADGE */}
+        <div className="flex items-center gap-2 px-3 py-1 rounded-full mb-12" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#10b981', boxShadow: '0 0 10px #10b981' }} />
+          <span className="font-mono uppercase font-bold" style={{ fontSize: '9px', letterSpacing: '0.15em', color: '#10b981' }}>1501 ONLINE</span>
         </div>
 
-        {/* CTA */}
-        <motion.button
-          id="enter-battle-btn"
-          className="btn flex flex-col items-center justify-center"
-          style={{ 
-            width: '100%', 
-            borderRadius: 16, 
-            background: 'linear-gradient(135deg, #ff2d78, #a855f7)', 
-            border: '1px solid rgba(255,255,255,0.2)',
-            boxShadow: '0 0 40px rgba(255, 45, 120, 0.4)',
-            padding: '20px 0',
-          }}
-          whileHover={{ scale: 1.02, boxShadow: '0 0 60px rgba(255, 45, 120, 0.7)' }}
-          whileTap={{ scale: 0.98 }}
+        {/* MAIN CARD */}
+        <motion.div 
+          className="w-full max-w-3xl rounded-[32px] flex flex-col items-center justify-center cursor-pointer group mb-8"
+          style={{ background: 'linear-gradient(180deg, rgba(20,20,20,0.8) 0%, rgba(10,10,10,0.8) 100%)', border: '1px solid rgba(255,255,255,0.05)', padding: '60px 20px', boxShadow: '0 20px 40px rgba(0,0,0,0.6)' }}
+          whileHover={{ scale: 1.01, borderColor: 'rgba(255,255,255,0.1)' }}
+          whileTap={{ scale: 0.99 }}
           onClick={() => router.push('/battle')}
         >
-          <div className="flex items-center gap-3 text-white font-display uppercase tracking-[0.1em]" style={{ fontSize: 28, textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
-            <Zap size={24} strokeWidth={3} fill="currentColor" />
-            ENTER THE ARENA
+          <div className="relative mb-8">
+            <Swords size={56} strokeWidth={1} color="#fff" className="opacity-80 group-hover:opacity-100 transition-opacity drop-shadow-md" />
+            <motion.div 
+              className="absolute top-0 right-0 w-2 h-2 rounded-full bg-yellow-400"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0, 1, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              style={{ transform: 'translate(50%, -50%)', boxShadow: '0 0 10px #facc15' }}
+            />
           </div>
-          <span className="text-xs text-white opacity-80 mt-1 font-medium tracking-wide">The AI has no mercy.</span>
-        </motion.button>
+          
+          <h2 className="text-xl sm:text-2xl tracking-[0.25em] font-bold text-white mb-8 text-center uppercase">ENTER THE ARENA</h2>
+          
+          <div className="flex items-center gap-2 px-4 py-2 rounded-full transition-colors group-hover:bg-[#064e3b]" style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+            <Check size={12} color="#10b981" />
+            <span className="text-[9px] uppercase tracking-[0.2em] font-bold" style={{ color: '#10b981' }}>VERIFIED · FIND MATCH</span>
+          </div>
+        </motion.div>
 
-        {/* Friend Battle */}
-        <motion.button
-          id="friend-battle-btn"
-          className="btn btn-ghost w-full mt-4"
-          style={{ width: '100%', borderRadius: 14, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#9ca3af' }}
-          whileHover={{ scale: 1.01, background: 'rgba(255,255,255,0.06)' }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => router.push('/battle?mode=friend')}
+        {/* 3 STEPS CARDS */}
+        <div className="w-full max-w-4xl flex flex-col md:flex-row items-center gap-4 mt-2">
+          <StepCard 
+            num="1" 
+            title="CAMERA CHECK" 
+            desc="Complete a quick camera check to get started." 
+            icon={<Camera size={14} className="opacity-70 mt-0.5" />} 
+          />
+          <ChevronRight size={16} className="hidden md:block text-gray-700 shrink-0" />
+          <StepCard 
+            num="2" 
+            title="SOLO PSL SCAN" 
+            desc="Take a Solo PSL Scan to verify you mog." 
+            icon={<span className="text-[12px] mt-0.5">🧪</span>} 
+          />
+          <ChevronRight size={16} className="hidden md:block text-gray-700 shrink-0" />
+          <StepCard 
+            num="3" 
+            title="COMPETE AND CLIMB THE RANKS" 
+            desc="Win matches, earn points, and climb the ladder." 
+            icon={<Swords size={14} className="text-gray-400 mt-0.5" />} 
+          />
+        </div>
+
+        {/* LEADERBOARD BUTTON */}
+        <motion.div 
+          className="w-full max-w-4xl rounded-2xl mt-6 p-5 flex items-center justify-between cursor-pointer group"
+          style={{ background: 'linear-gradient(90deg, rgba(30,20,0,0.6) 0%, rgba(15,15,15,0.6) 100%)', border: '1px solid rgba(251, 191, 36, 0.15)' }}
+          whileHover={{ scale: 1.01, borderColor: 'rgba(251, 191, 36, 0.3)' }}
+          onClick={() => router.push('/leaderboard')}
         >
-          <Link2 size={16} /> Challenge a Specific Friend
-        </motion.button>
-
-        <p className="text-center text-muted mt-5" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-          Webcam required · 18+ · Entertainment purposes only
-        </p>
-      </motion.div>
-
-
-
-      {/* ── LONG-FORM SEO CONTENT ─────────────────── */}
-      <div className="container-md text-left w-full px-6 mb-16" style={{ position: 'relative', zIndex: 1, maxWidth: '800px' }}>
-        
-        <h2 className="font-display text-2xl text-white mb-4 tracking-wider" style={{ color: '#00f5d4' }}>What is Omogle?</h2>
-        <p className="text-gray-300 mb-10 leading-relaxed font-medium">
-          Omogle is a live AI-powered face battle platform where users compete in realtime webcam matchups against random strangers worldwide. The platform uses artificial intelligence to analyze facial attractiveness, symmetry, confidence, and overall presence to determine winners. Players gain Elo points, climb leaderboards, and compete for top rankings in the global mog arena.
-        </p>
-
-        <h2 className="font-display text-2xl text-white mb-4 tracking-wider" style={{ color: '#ff2d78' }}>How Omogle Works</h2>
-        <p className="text-gray-300 mb-10 leading-relaxed font-medium">
-          Users enter live 1v1 face battles using their webcam. Once matched, Omogle’s AI analyzes both participants in real time using face analysis technology and attractiveness scoring systems. Winners receive Elo rating increases while losers lose ranking points. The platform combines random video chat, competitive ranking systems, and AI-powered judging into a single social experience.
-        </p>
-
-        <h2 className="font-display text-2xl text-white mb-4 tracking-wider" style={{ color: '#a855f7' }}>Features</h2>
-        <ul className="text-gray-300 mb-10 leading-relaxed font-medium grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-[#a855f7] rounded-full"/> Live 1v1 webcam battles</li>
-          <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-[#a855f7] rounded-full"/> AI-powered attractiveness analysis</li>
-          <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-[#a855f7] rounded-full"/> Real-time face scoring</li>
-          <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-[#a855f7] rounded-full"/> Global Elo leaderboards</li>
-          <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-[#a855f7] rounded-full"/> Random stranger matchmaking</li>
-          <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-[#a855f7] rounded-full"/> Competitive ranking system</li>
-          <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-[#a855f7] rounded-full"/> Facial symmetry analysis</li>
-          <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-[#a855f7] rounded-full"/> Live online arena</li>
-        </ul>
-
-      </div>
-
-      {/* ── FAQ SECTION ─────────────────── */}
-      <div className="container-md w-full px-6 mb-16" style={{ position: 'relative', zIndex: 1, maxWidth: '800px' }}>
-        <h2 className="font-display text-2xl text-white mb-8 tracking-wider text-center">FREQUENTLY ASKED QUESTIONS</h2>
-        <div className="flex flex-col gap-6">
-          {[
-            { q: "What is Omogle?", a: "Omogle is an AI-powered live face battle platform where strangers compete in realtime webcam matchups and AI decides who wins based on attractiveness and facial analysis." },
-            { q: "How does the AI judge faces?", a: "Omogle uses AI face analysis systems that evaluate facial symmetry, proportions, confidence, and overall appearance during live battles." },
-            { q: "Is Omogle free?", a: "Yes, users can join live 1v1 face battles and compete in the arena for free." },
-            { q: "Can I play with friends?", a: "Yes, Omogle supports private challenges and friend battles in addition to random matchmaking." },
-            { q: "What is the Elo ranking system?", a: "Elo is a competitive ranking system that increases when players win battles and decreases when they lose." }
-          ].map((faq, idx) => (
-            <div key={idx} className="card p-6" style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.05)' }}>
-              <h3 className="font-semibold text-lg text-white mb-2 flex items-start gap-2">
-                <HelpCircle size={20} color="#00f5d4" className="mt-0.5 shrink-0" />
-                {faq.q}
-              </h3>
-              <p className="text-gray-400 pl-7 leading-relaxed">{faq.a}</p>
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(251, 191, 36, 0.1)' }}>
+              <Trophy size={18} color="#fbbf24" />
             </div>
-          ))}
-        </div>
-      </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-yellow-500">VIEW LEADERBOARD</span>
+              <span className="text-[11px] text-gray-500 mt-1">See top players and rankings.</span>
+            </div>
+          </div>
+          <ChevronRight size={16} className="text-gray-600 group-hover:text-yellow-500 transition-colors" />
+        </motion.div>
 
-      {/* ── FOOTER / LEGAL ─────────────────── */}
-      <footer className="w-full text-center mt-8 pt-10 pb-4 border-t border-white/5" style={{ position: 'relative', zIndex: 1 }}>
-        <div className="flex flex-wrap justify-center gap-x-6 gap-y-3 text-xs font-bold uppercase tracking-wider mb-8 px-4" style={{ color: '#6b7280' }}>
-          <a href="/leaderboard" className="hover:text-white transition-colors">Leaderboard</a>
-          <a href="/how-it-works" className="hover:text-white transition-colors">How It Works</a>
-          <a href="/faq" className="hover:text-white transition-colors">FAQ</a>
-          <a href="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</a>
-          <a href="/terms" className="hover:text-white transition-colors">Terms of Use</a>
-          <a href="/rankings" className="hover:text-white transition-colors">Rankings</a>
-          <a href="/live-battles" className="hover:text-white transition-colors">Live Battles</a>
+        {/* FOOTER */}
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 mt-20 text-[9px] font-bold tracking-[0.2em] uppercase text-gray-600">
+          <a href="/privacy-policy" className="hover:text-gray-300 transition-colors">PRIVACY POLICY</a>
+          <span className="hidden sm:inline">·</span>
+          <a href="/terms" className="hover:text-gray-300 transition-colors">TERMS OF USE</a>
+          <span className="hidden sm:inline">·</span>
+          <a href="/settings" className="hover:text-gray-300 transition-colors">SETTINGS</a>
         </div>
-        
-        <p className="text-muted text-xs font-medium">© {new Date().getFullYear()} Omogle. All rights reserved. The AI already roasted you for free.</p>
-      </footer>
+
+      </div>
     </main>
   );
 }
