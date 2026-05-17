@@ -11,11 +11,11 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL('https://omogle.vercel.app'),
   title: {
-    default: 'omogle — the internet’s face arena',
-    template: '%s | omogle'
+    default: 'Omogle — AI Face Battles, Live 1v1 Mog Arena & Elo Rankings',
+    template: '%s | Omogle'
   },
-  description: '1v1 live face battles, AI-judged, Elo ranked. Your jawline is now competitive. Snap into the arena — see who mogs in real time.',
-  keywords: ['mogging', 'face battle', 'AI face analysis', 'looksmaxxing', 'random video chat', 'omogle', 'elo ranking'],
+  description: 'Omogle is a live 1v1 face battle platform where strangers compete in real time while AI judges attractiveness, facial symmetry, and overall aura. Climb Elo rankings, battle random players, and see who mogs.',
+  keywords: ['AI face battles', 'attractiveness AI', 'face rating app', 'live face battle', 'AI attractiveness test', 'random video chat', 'Elo ranking', 'mog arena', 'facial symmetry AI', 'AI face analyzer', 'face competition app', 'webcam battle', 'live AI judging', 'face ranking website'],
   authors: [{ name: 'Omogle' }],
   creator: 'Omogle',
   publisher: 'Omogle',
@@ -34,17 +34,17 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: 'omogle — the internet’s face arena',
-    description: '1v1 live face battles, AI-judged, Elo ranked. Your jawline is now competitive.',
+    title: 'Omogle — AI Face Battles, Live 1v1 Mog Arena & Elo Rankings',
+    description: 'Omogle is a live 1v1 face battle platform where strangers compete in real time while AI judges attractiveness, facial symmetry, and overall aura.',
     url: 'https://omogle.vercel.app',
-    siteName: 'omogle',
+    siteName: 'Omogle',
     locale: 'en_US',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'omogle — the internet’s face arena',
-    description: '1v1 live face battles, AI-judged, Elo ranked. Your jawline is now competitive.',
+    title: 'Omogle — AI Face Battles, Live 1v1 Mog Arena & Elo Rankings',
+    description: 'Omogle is a live 1v1 face battle platform where strangers compete in real time while AI judges attractiveness, facial symmetry, and overall aura.',
   },
   icons: {
     icon: '/omogle-logo.svg',
