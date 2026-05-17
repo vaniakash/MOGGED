@@ -23,6 +23,7 @@ const StepCard = ({ num, title, desc, icon }: any) => (
 export default function HomePage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const [showSeo, setShowSeo] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -156,6 +157,68 @@ export default function HomePage() {
           </div>
           <ChevronRight size={16} className="text-gray-600 group-hover:text-yellow-500 transition-colors" />
         </motion.div>
+
+        {/* SEO EXPANDABLE SECTION */}
+        <button 
+          onClick={() => setShowSeo(!showSeo)}
+          className="mt-16 text-[9px] font-bold tracking-[0.2em] uppercase text-gray-600 hover:text-gray-300 transition-colors flex items-center gap-2"
+        >
+          {showSeo ? 'HIDE ABOUT OMOGLE' : 'READ ABOUT OMOGLE'}
+          <motion.div animate={{ rotate: showSeo ? -90 : 90 }} transition={{ duration: 0.2 }}>
+            <ChevronRight size={12} />
+          </motion.div>
+        </button>
+
+        <AnimatePresence>
+          {showSeo && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="w-full max-w-3xl text-left overflow-hidden mt-8 border-t border-white/5 pt-8"
+            >
+              <h2 className="text-[12px] font-bold uppercase tracking-[0.2em] text-gray-300 mb-3">What is Omogle?</h2>
+              <p className="text-[11px] text-gray-500 mb-8 leading-relaxed">
+                Omogle is a live AI-powered face battle platform where users compete in realtime webcam matchups against random strangers worldwide. The platform uses artificial intelligence to analyze facial attractiveness, symmetry, confidence, and overall presence to determine winners. Players gain Elo points, climb leaderboards, and compete for top rankings in the global mog arena.
+              </p>
+
+              <h2 className="text-[12px] font-bold uppercase tracking-[0.2em] text-gray-300 mb-3">How Omogle Works</h2>
+              <p className="text-[11px] text-gray-500 mb-8 leading-relaxed">
+                Users enter live 1v1 face battles using their webcam. Once matched, Omogle’s AI analyzes both participants in real time using face analysis technology and attractiveness scoring systems. Winners receive Elo rating increases while losers lose ranking points. The platform combines random video chat, competitive ranking systems, and AI-powered judging into a single social experience.
+              </p>
+
+              <h2 className="text-[12px] font-bold uppercase tracking-[0.2em] text-gray-300 mb-3">Features</h2>
+              <ul className="text-[11px] text-gray-500 mb-12 leading-relaxed grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <li className="flex items-center gap-2"><div className="w-1 h-1 bg-gray-500 rounded-full"/> Live 1v1 webcam battles</li>
+                <li className="flex items-center gap-2"><div className="w-1 h-1 bg-gray-500 rounded-full"/> AI-powered attractiveness analysis</li>
+                <li className="flex items-center gap-2"><div className="w-1 h-1 bg-gray-500 rounded-full"/> Real-time face scoring</li>
+                <li className="flex items-center gap-2"><div className="w-1 h-1 bg-gray-500 rounded-full"/> Global Elo leaderboards</li>
+                <li className="flex items-center gap-2"><div className="w-1 h-1 bg-gray-500 rounded-full"/> Random stranger matchmaking</li>
+                <li className="flex items-center gap-2"><div className="w-1 h-1 bg-gray-500 rounded-full"/> Competitive ranking system</li>
+                <li className="flex items-center gap-2"><div className="w-1 h-1 bg-gray-500 rounded-full"/> Facial symmetry analysis</li>
+                <li className="flex items-center gap-2"><div className="w-1 h-1 bg-gray-500 rounded-full"/> Live online arena</li>
+              </ul>
+
+              <h2 className="text-[12px] font-bold uppercase tracking-[0.2em] text-gray-300 mb-6 text-center">FREQUENTLY ASKED QUESTIONS</h2>
+              <div className="flex flex-col gap-4">
+                {[
+                  { q: "What is Omogle?", a: "Omogle is an AI-powered live face battle platform where strangers compete in realtime webcam matchups and AI decides who wins based on attractiveness and facial analysis." },
+                  { q: "How does the AI judge faces?", a: "Omogle uses AI face analysis systems that evaluate facial symmetry, proportions, confidence, and overall appearance during live battles." },
+                  { q: "Is Omogle free?", a: "Yes, users can join live 1v1 face battles and compete in the arena for free." },
+                  { q: "Can I play with friends?", a: "Yes, Omogle supports private challenges and friend battles in addition to random matchmaking." },
+                  { q: "What is the Elo ranking system?", a: "Elo is a competitive ranking system that increases when players win battles and decreases when they lose." }
+                ].map((faq, idx) => (
+                  <div key={idx} className="p-4" style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.03)' }}>
+                    <h3 className="font-semibold text-[11px] uppercase tracking-wider text-gray-300 mb-2">
+                      {faq.q}
+                    </h3>
+                    <p className="text-[11px] text-gray-500 leading-relaxed">{faq.a}</p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* FOOTER */}
         <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 mt-20 text-[9px] font-bold tracking-[0.2em] uppercase text-gray-600">
