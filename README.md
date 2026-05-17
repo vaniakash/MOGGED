@@ -1,4 +1,4 @@
-# 🔥 OmmoGale — AI Face Battle Arena
+# 🔥 Omogle — AI Face Battle Arena
 
 > Random stranger video battle. AI-analyzed faces. Mog or get mogged.
 
