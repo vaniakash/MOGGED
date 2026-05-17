@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Zap, Link2, Globe, Users, Target, Activity, HelpCircle } from 'lucide-react';
+import { Zap, Link2, HelpCircle } from 'lucide-react';
 
 const MEME_QUOTES = [
   '"You either mog, or get mogged."',
@@ -105,7 +105,7 @@ export default function HomePage() {
         transition={{ delay: 0.18, duration: 0.7, ease: [0.34, 1.56, 0.64, 1] }}
       >
         {/* VS visual */}
-        <div className="flex items-center justify-center gap-6 mb-8">
+        <div className="flex items-center justify-center gap-3 sm:gap-6 mb-8">
           <motion.div
             className="avatar-xl flex items-center justify-center"
             style={{
@@ -199,27 +199,7 @@ export default function HomePage() {
         </p>
       </motion.div>
 
-      {/* ── SOCIAL PROOF SECTION ─────────────────── */}
-      <motion.div
-        className="flex flex-wrap justify-center gap-8 text-center mb-16 w-full max-w-3xl px-4"
-        style={{ position: 'relative', zIndex: 1 }}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.35 }}
-      >
-        {[
-          { label: 'Battles Completed', value: '120k+', icon: <Activity size={24} color="#00f5d4"/> },
-          { label: 'Ranked Players',    value: '5k+',   icon: <Users size={24} color="#a855f7"/> },
-          { label: 'Countries',         value: '40+',   icon: <Globe size={24} color="#3b82f6"/> },
-          { label: 'Live Arena',        value: '24/7',  icon: <Target size={24} color="#ff2d78"/> },
-        ].map(s => (
-          <div key={s.label} className="flex flex-col items-center gap-2">
-            {s.icon}
-            <div className="font-display text-white" style={{ fontSize: 32, textShadow: '0 0 20px rgba(255,255,255,0.1)' }}>{s.value}</div>
-            <div className="text-muted text-xs font-bold uppercase tracking-widest">{s.label}</div>
-          </div>
-        ))}
-      </motion.div>
+
 
       {/* ── LONG-FORM SEO CONTENT ─────────────────── */}
       <div className="container-md text-left w-full px-6 mb-16" style={{ position: 'relative', zIndex: 1, maxWidth: '800px' }}>
