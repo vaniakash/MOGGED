@@ -1,14 +1,55 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
+export const viewport: Viewport = {
+  themeColor: '#050508',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+};
+
 export const metadata: Metadata = {
-  title: 'omogle — the internet’s face arena',
-  description: '1v1 live face battles, AI-judged, Elo ranked. Your jawline is now competitive.',
-  keywords: ['mogging', 'face battle', 'AI face analysis', 'random video chat', 'omogle'],
+  metadataBase: new URL('https://omogle.vercel.app'),
+  title: {
+    default: 'omogle — the internet’s face arena',
+    template: '%s | omogle'
+  },
+  description: '1v1 live face battles, AI-judged, Elo ranked. Your jawline is now competitive. Snap into the arena — see who mogs in real time.',
+  keywords: ['mogging', 'face battle', 'AI face analysis', 'looksmaxxing', 'random video chat', 'omogle', 'elo ranking'],
+  authors: [{ name: 'Omogle' }],
+  creator: 'Omogle',
+  publisher: 'Omogle',
+  alternates: {
+    canonical: '/',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   openGraph: {
     title: 'omogle — the internet’s face arena',
     description: '1v1 live face battles, AI-judged, Elo ranked. Your jawline is now competitive.',
+    url: 'https://omogle.vercel.app',
+    siteName: 'omogle',
+    locale: 'en_US',
     type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'omogle — the internet’s face arena',
+    description: '1v1 live face battles, AI-judged, Elo ranked. Your jawline is now competitive.',
+  },
+  icons: {
+    icon: '/omogle-logo.svg',
+    shortcut: '/omogle-logo.svg',
+    apple: '/omogle-logo.svg',
   },
   verification: {
     google: '1wtS_iaxJD4SYCzjM1eNG3mV-xsjGPkLWcjYXpYVwbg',
