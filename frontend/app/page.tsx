@@ -67,16 +67,8 @@ export default function HomePage() {
         transition={{ duration: 0.8, ease: [0.34, 1.56, 0.64, 1] }}
         style={{ position: 'relative', zIndex: 1 }}
       >
-        <div className="flex items-center justify-center gap-3 mb-3">
-          <div
-            className="icon-box-lg"
-            style={{ background: 'linear-gradient(135deg, #00f5d4, #a855f7)', borderRadius: 16 }}
-          >
-            <Zap size={28} color="#050508" strokeWidth={2.5} />
-          </div>
-          <h1 className="font-display gradient-text" style={{ fontSize: 54, letterSpacing: '0.12em' }}>
-            OMMOGALE
-          </h1>
+        <div className="flex items-center justify-center mb-3">
+          <img src="/omogle-logo.png" alt="Ommogale" style={{ height: 80, objectFit: 'contain' }} />
         </div>
         <p className="text-secondary text-lg">AI-Powered Face Battle Arena</p>
       </motion.div>
