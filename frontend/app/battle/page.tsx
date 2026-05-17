@@ -271,7 +271,7 @@ function BattlePageInner() {
       {/* ── NAV ── */}
       <nav className="nav">
         <a href="/" className="nav-logo" style={{ display: 'flex', alignItems: 'center' }}>
-          <img src="/omogle-logo.png" alt="Ommogale" style={{ height: 32, objectFit: 'contain' }} />
+          <img src="/omogle-logo.svg" alt="Ommogale" style={{ height: 32, objectFit: 'contain' }} />
         </a>
         <div className="nav-actions">
           {initState === 'loading' && (
