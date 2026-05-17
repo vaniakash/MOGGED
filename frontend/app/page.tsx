@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Zap, Trophy, Link2 } from 'lucide-react';
+import { Zap, Link2 } from 'lucide-react';
 
 const MEME_QUOTES = [
   '"You either mog, or get mogged."',
@@ -38,10 +38,7 @@ export default function HomePage() {
   return (
     <main className="page-center" style={{ paddingTop: 64, paddingBottom: 64, minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       
-      {/* ── TOP STATUS BAR ─────────────────── */}
-      <div className="w-full text-center py-2" style={{ background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.05)', position: 'absolute', top: 0, left: 0, width: '100%', zIndex: 10 }}>
-        <span className="text-xs text-secondary font-medium">You’re playing as Guest. <a href="#" className="hover:underline text-white font-bold">Claim your rank with Google.</a></span>
-      </div>
+
 
       {/* Floating particles */}
       {particles.map(p => (
@@ -72,10 +69,7 @@ export default function HomePage() {
         transition={{ duration: 0.8, ease: [0.34, 1.56, 0.64, 1] }}
         style={{ position: 'relative', zIndex: 1, marginTop: 20 }}
       >
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-8" style={{ background: 'rgba(0, 245, 212, 0.08)', border: '1px solid rgba(0, 245, 212, 0.2)' }}>
-           <div className="w-2 h-2 rounded-full bg-[#00f5d4]" style={{ animation: 'pulse-glow 2s infinite' }} />
-           <span className="text-xs font-bold" style={{ color: '#00f5d4', letterSpacing: '0.05em' }}>1,482 ONLINE</span>
-        </div>
+
         
         <h1 className="font-display gradient-text" style={{ fontSize: 'clamp(64px, 15vw, 140px)', lineHeight: 0.85, letterSpacing: '0.01em', textShadow: '0 0 40px rgba(168,85,247,0.3)', marginBottom: 24, textTransform: 'uppercase' }}>
           OMOGLE
@@ -193,56 +187,7 @@ export default function HomePage() {
         </p>
       </motion.div>
 
-      {/* ── STATS ────────────────────────── */}
-      <motion.div
-        className="flex justify-center gap-10 text-center mb-10 w-full max-w-md"
-        style={{ position: 'relative', zIndex: 1 }}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.35 }}
-      >
-        {[
-          { label: 'Battles Today', value: '12,847' },
-          { label: 'Avg Score',     value: '6.4' },
-        ].map(s => (
-          <div key={s.label}>
-            <div className="font-display text-white" style={{ fontSize: 32, textShadow: '0 0 20px rgba(255,255,255,0.2)' }}>{s.value}</div>
-            <div className="text-muted text-xs font-bold uppercase tracking-widest">{s.label}</div>
-          </div>
-        ))}
-      </motion.div>
 
-      {/* ── LEADERBOARD PREVIEW ─────────────────── */}
-      <motion.div
-        className="container-sm mb-12"
-        style={{ position: 'relative', zIndex: 1, padding: '24px', borderRadius: 20, background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.05)' }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.45 }}
-      >
-        <div className="flex justify-between items-center mb-5">
-          <div className="flex items-center gap-2">
-            <Trophy size={16} color="#fbbf24" />
-            <h3 className="font-display text-lg tracking-wider text-white">LIVE RANKINGS</h3>
-          </div>
-          <a href="/leaderboard" className="text-xs text-muted hover:text-white transition-colors uppercase font-bold tracking-wider">View Top 100 →</a>
-        </div>
-        <div className="flex flex-col gap-2">
-          {[
-            { rank: 1, name: 'GigaChad99', elo: 2450 },
-            { rank: 2, name: 'SymmetryGod', elo: 2310 },
-            { rank: 3, name: 'HunterEyes', elo: 2285 },
-          ].map((p, i) => (
-            <div key={p.rank} className="flex items-center justify-between p-3 rounded-xl" style={{ background: i === 0 ? 'linear-gradient(90deg, rgba(251,191,36,0.1), transparent)' : 'rgba(255,255,255,0.02)' }}>
-              <div className="flex items-center gap-4">
-                <span className="font-display text-muted w-4 text-center">{p.rank}</span>
-                <span className="font-medium text-sm text-gray-200">{p.name}</span>
-              </div>
-              <span className="font-display text-white" style={{ textShadow: i === 0 ? '0 0 10px rgba(251,191,36,0.5)' : 'none' }}>{p.elo}</span>
-            </div>
-          ))}
-        </div>
-      </motion.div>
 
       {/* ── HOW IT WORKS ─────────────────── */}
       <motion.div
