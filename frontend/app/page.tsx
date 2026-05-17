@@ -235,6 +235,16 @@ export default function HomePage() {
           ))}
         </div>
       </motion.div>
+
+      {/* ── FOOTER / LEGAL ─────────────────── */}
+      <div className="text-center mt-12" style={{ position: 'relative', zIndex: 1 }}>
+        <p className="text-secondary text-xs mb-3">We do not sell your data. The AI already roasted you for free.</p>
+        <div className="flex items-center justify-center gap-4 text-xs font-semibold" style={{ color: '#a855f7' }}>
+          <a href="#" className="hover:underline">Privacy Policy</a>
+          <span style={{ color: 'rgba(255,255,255,0.2)' }}>·</span>
+          <a href="#" className="hover:underline">Terms of Use</a>
+        </div>
+      </div>
     </main>
   );
 }

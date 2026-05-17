@@ -2,13 +2,16 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'OmmoGale — AI Mogging Battle',
-  description: 'Random face battle powered by AI. Get matched, get analyzed, get mogged — or mog them back.',
-  keywords: ['mogging', 'face battle', 'AI face analysis', 'random video chat', 'ommogale'],
+  title: 'omogle — the internet’s face arena',
+  description: '1v1 live face battles, AI-judged, Elo ranked. Your jawline is now competitive.',
+  keywords: ['mogging', 'face battle', 'AI face analysis', 'random video chat', 'omogle'],
   openGraph: {
-    title: 'OmmoGale — AI Mogging Battle',
-    description: 'Can you escape the mog? Face off in the AI arena.',
+    title: 'omogle — the internet’s face arena',
+    description: '1v1 live face battles, AI-judged, Elo ranked. Your jawline is now competitive.',
     type: 'website',
+  },
+  verification: {
+    google: '1wtS_iaxJD4SYCzjM1eNG3mV-xsjGPkLWcjYXpYVwbg',
   },
 };
 
