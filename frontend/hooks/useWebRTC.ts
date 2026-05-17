@@ -98,11 +98,11 @@ export function useWebRTC({ socket, roomId, role }: UseWebRTCOptions) {
       stream = localStreamRef.current;
     } else {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
         localStreamRef.current = stream;
         setLocalStream(stream);
       } catch (err) {
-        console.error('[WebRTC] Camera/mic access denied', err);
+        console.error('[WebRTC] Camera access denied', err);
         socket.off('webrtc_signal', handleSignal);
         return;
       }
