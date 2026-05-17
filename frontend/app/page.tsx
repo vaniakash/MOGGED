@@ -68,7 +68,7 @@ export default function HomePage() {
         style={{ position: 'relative', zIndex: 1 }}
       >
         <div className="flex items-center justify-center mb-3">
-          <img src="/omogle-logo.svg" alt="Ommogale" style={{ height: 80, objectFit: 'contain' }} />
+          <img src="/logo-omogle.png" alt="Ommogale" style={{ height: 80, objectFit: 'contain' }} />
         </div>
         <p className="text-secondary text-lg">AI-Powered Face Battle Arena</p>
       </motion.div>
