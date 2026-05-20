@@ -7,10 +7,12 @@ const nextConfig = {
   ],
 
   // Required for MediaPipe WASM SIMD (SharedArrayBuffer)
+  // ONLY applied to /battle — NOT sitemap, robots, or SEO pages.
+  // Applying these headers globally breaks Google's sitemap crawler.
   async headers() {
     return [
       {
-        source: '/(.*)',
+        source: '/battle',
         headers: [
           { key: 'Cross-Origin-Opener-Policy',   value: 'same-origin' },
           { key: 'Cross-Origin-Embedder-Policy', value: 'credentialless' },
@@ -18,6 +20,7 @@ const nextConfig = {
       },
     ];
   },
+
 
   turbopack: {
     resolveAlias: {
