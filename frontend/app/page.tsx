@@ -1,250 +1,300 @@
-'use client';
+// Server Component — no 'use client'. Exports metadata, renders crawlable HTML.
+import type { Metadata } from 'next';
+import HomepageHero from '@/components/HomepageHero';
 
-import { motion, AnimatePresence } from 'framer-motion';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { Zap, Bot, Trophy, Camera, Link2, Cpu, Swords } from 'lucide-react';
+export const metadata: Metadata = {
+  title: 'Omogle — Face Battle Arena | Get Mogged Online',
+  description:
+    'Join live face battles, compare looks, climb ELO rankings, and see who gets mogged. Omogle is the internet\'s real-time competitive face arena — AI-judged, stranger-matched, brutally honest.',
+  alternates: {
+    canonical: 'https://omogle.vercel.app',
+  },
+};
 
-const MEME_QUOTES = [
-  '"You either mog, or get mogged."',
-  '"The AI has no mercy. Neither do we."',
-  '"Your face is now data."',
-  '"NPC faces get exposed here."',
-  '"Hunter eyes vs NPC stare — who wins?"',
-];
+// FAQ schema — injected server-side so Google sees it on first crawl
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'What does mogged mean?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Mogged means to be physically dominated or outclassed in attractiveness by another person. It comes from the internet slang "mog" — when someone\'s looks, height, or overall presence makes you appear lesser by comparison. If you get mogged, the other person out-competed you on looks.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What is Omogle?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Omogle is a real-time competitive face battle platform. You get matched with a random stranger via webcam, an AI analyzes both faces simultaneously during a 10-second countdown, and the server reveals who scored higher — who mogged and who got mogged. Your result updates your ELO ranking on the global leaderboard.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What is a face battle?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'A face battle is a head-to-head comparison of two people\'s faces scored by AI. On Omogle, both users go live on webcam and the AI measures facial symmetry, jawline sharpness, canthal tilt (hunter eyes), eye spacing, and facial thirds harmony. The higher scorer wins the battle and gains ELO points.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What are hunter eyes?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Hunter eyes refer to a positive canthal tilt — where the outer corners of the eyes are higher than the inner corners, giving an intense, focused appearance. In looksmaxxing culture, hunter eyes are considered a high-status facial feature associated with attractiveness and dominance. Prey eyes (negative canthal tilt) are the opposite. Omogle\'s AI detects and scores your canthal tilt in real time.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How does the ELO ranking system work?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Every user starts with 1000 ELO points. When you win a battle, you gain ELO based on the difference between your rating and your opponent\'s. When you lose, you lose points by the same formula. Beating higher-ranked players earns more points. Rankings are tracked on the global leaderboard.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Can I battle my friends?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Yes. Omogle has a private room system for friend battles. One person generates a 6-character code, shares it with their friend, and the friend enters the code to start a direct battle. Same AI analysis and ELO system applies.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What is looksmaxxing?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Looksmaxxing is the practice of maximizing your physical attractiveness through various means — skincare, fitness, haircuts, posture, diet, and sometimes medical procedures. The looksmaxxing community uses terms like mog, mogged, mogger, hunter eyes, jaw ratio, and canthal tilt to describe facial aesthetics. Omogle provides an AI-powered way to benchmark your looks in real competition.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How does the face scoring work?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Omogle uses MediaPipe FaceMesh to detect 468 facial landmarks in real time. The AI scores four dimensions: facial symmetry (nose and mouth alignment), canthal tilt (hunter eyes detection), jawline sharpness (jaw width to face height ratio), and facial thirds harmony (golden ratio proportions). Scores range from 4.0 to 9.8 for entertainment purposes. Results are not medical assessments.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What does a mogger mean?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'A mogger is someone who consistently mogs others — a person whose looks, presence, or overall appearance dominates the people around them. On Omogle\'s leaderboard, high-ELO players who win most of their battles are considered moggers. Reaching GIGACHAD or CHAD rank on the leaderboard marks you as a top mogger.',
+      },
+    },
+  ],
+};
 
 export default function HomePage() {
-  const router = useRouter();
-  const [quoteIdx, setQuoteIdx] = useState(0);
-  const [particles, setParticles] = useState<{ id: number; x: number; color: string; delay: number; dur: number }[]>([]);
-
-  useEffect(() => {
-    const t = setInterval(() => setQuoteIdx(i => (i + 1) % MEME_QUOTES.length), 3200);
-    return () => clearInterval(t);
-  }, []);
-
-  useEffect(() => {
-    setParticles(
-      Array.from({ length: 22 }, (_, i) => ({
-        id: i,
-        x: Math.random() * 100,
-        color: ['#ff2d78', '#00f5d4', '#a855f7', '#fbbf24'][i % 4],
-        delay: Math.random() * 6,
-        dur: 4 + Math.random() * 4,
-      }))
-    );
-  }, []);
-
   return (
     <main className="page-center" style={{ paddingTop: 48, paddingBottom: 48 }}>
 
-      {/* Floating particles */}
-      {particles.map(p => (
-        <motion.div
-          key={p.id}
-          style={{
-            position: 'fixed',
-            bottom: -10,
-            left: `${p.x}%`,
-            width: 5,
-            height: 5,
-            borderRadius: '50%',
-            background: p.color,
-            boxShadow: `0 0 10px ${p.color}`,
-            pointerEvents: 'none',
-            zIndex: 0,
-          }}
-          animate={{ y: [0, -(700 + Math.random() * 400)], opacity: [0, 1, 1, 0], scale: [0, 1, 1, 0] }}
-          transition={{ duration: p.dur, repeat: Infinity, delay: p.delay, ease: 'easeOut' }}
-        />
-      ))}
+      {/* ── INTERACTIVE HERO (client component) ── */}
+      <HomepageHero />
 
-      {/* ── LOGO ─────────────────────────── */}
-      <motion.div
-        className="text-center mb-8"
-        initial={{ y: -60, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.8, ease: [0.34, 1.56, 0.64, 1] }}
-        style={{ position: 'relative', zIndex: 1 }}
-      >
-        <div className="flex items-center justify-center mb-3">
-          <img src="/logo-omogle.png" alt="Ommogale" style={{ height: 140, objectFit: 'contain' }} />
-        </div>
-        <p className="text-secondary text-lg">AI-Powered Face Battle Arena</p>
-      </motion.div>
-
-      {/* ── HERO CARD ────────────────────── */}
-      <motion.div
-        className="card card-purple container-sm mb-8"
-        style={{ padding: 32, position: 'relative', zIndex: 1 }}
-        initial={{ scale: 0.82, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ delay: 0.18, duration: 0.7, ease: [0.34, 1.56, 0.64, 1] }}
-      >
-        {/* VS visual */}
-        <div className="flex items-center justify-center gap-6 mb-8">
-          <motion.div
-            className="avatar-xl flex items-center justify-center"
-            style={{
-              background: 'linear-gradient(135deg, rgba(0,245,212,0.18), rgba(0,245,212,0.04))',
-              border: '2px solid rgba(0,245,212,0.4)',
-              fontSize: 32,
-            }}
-            animate={{ rotate: [0, 5, 0, -5, 0] }}
-            transition={{ duration: 4, repeat: Infinity }}
-          >
-            🧑
-          </motion.div>
-
-          <motion.div
-            className="font-display"
-            style={{ fontSize: 48, color: '#a855f7', textShadow: '0 0 24px rgba(168,85,247,0.8)' }}
-            animate={{ scale: [1, 1.18, 1] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-          >
-            VS
-          </motion.div>
-
-          <motion.div
-            className="avatar-xl flex items-center justify-center"
-            style={{
-              background: 'linear-gradient(135deg, rgba(255,45,120,0.18), rgba(255,45,120,0.04))',
-              border: '2px solid rgba(255,45,120,0.4)',
-              fontSize: 32,
-            }}
-            animate={{ rotate: [0, -5, 0, 5, 0] }}
-            transition={{ duration: 4, repeat: Infinity, delay: 0.5 }}
-          >
-            🧑
-          </motion.div>
-        </div>
-
-        {/* Meme quote */}
-        <AnimatePresence mode="wait">
-          <motion.p
-            key={quoteIdx}
-            className="text-secondary italic text-center mb-8 leading-relaxed"
-            style={{ fontSize: 15 }}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.45 }}
-          >
-            {MEME_QUOTES[quoteIdx]}
-          </motion.p>
-        </AnimatePresence>
-
-        {/* Feature grid */}
-        <div className="grid-3 gap-3 mb-8" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)' }}>
-          {[
-            { icon: <Swords size={22} color="#00f5d4" />, label: 'Random Match' },
-            { icon: <Bot size={22} color="#a855f7" />,    label: 'AI Analysis' },
-            { icon: <Trophy size={22} color="#fbbf24" />, label: 'ELO Ranking' },
-          ].map(f => (
-            <div
-              key={f.label}
-              className="card text-center"
-              style={{ padding: '12px 8px', borderRadius: 14 }}
-            >
-              <div className="flex justify-center mb-2">{f.icon}</div>
-              <div className="text-xs text-secondary font-semibold">{f.label}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* CTA */}
-        <motion.button
-          id="enter-battle-btn"
-          className="btn btn-primary btn-xl w-full"
-          style={{ width: '100%', borderRadius: 16 }}
-          whileHover={{ scale: 1.025 }}
-          whileTap={{ scale: 0.96 }}
-          onClick={() => router.push('/battle')}
-        >
-          <Zap size={20} strokeWidth={2.5} />
-          ENTER THE ARENA
-        </motion.button>
-
-        {/* Divider */}
-        <div className="flex items-center gap-3 my-5">
-          <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
-          <span className="text-muted" style={{ fontSize: 12, fontWeight: 600 }}>OR</span>
-          <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
-        </div>
-
-        {/* Friend Battle */}
-        <motion.button
-          id="friend-battle-btn"
-          className="btn btn-ghost w-full"
-          style={{ width: '100%', borderRadius: 14, borderColor: 'rgba(168,85,247,0.4)', color: '#a855f7' }}
-          whileHover={{ scale: 1.02, borderColor: 'rgba(168,85,247,0.8)' }}
-          whileTap={{ scale: 0.97 }}
-          onClick={() => router.push('/battle?mode=friend')}
-        >
-          <Link2 size={17} /> CHALLENGE A FRIEND
-        </motion.button>
-
-        <p className="text-center text-muted text-xs mt-4">
-          Webcam required · 18+ · Entertainment purposes only
-        </p>
-      </motion.div>
-
-      {/* ── STATS ────────────────────────── */}
-      <motion.div
-        className="flex gap-8 text-center mb-12"
-        style={{ position: 'relative', zIndex: 1 }}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.45 }}
-      >
-        {[
-          { label: 'Battles Today', value: '12,847' },
-          { label: 'Moggers',       value: '4,231' },
-          { label: 'Avg Score',     value: '6.4' },
-        ].map(s => (
-          <div key={s.label}>
-            <div className="font-display neon-cyan" style={{ fontSize: 26 }}>{s.value}</div>
-            <div className="text-muted text-xs">{s.label}</div>
-          </div>
-        ))}
-      </motion.div>
-
-      {/* ── HOW IT WORKS ─────────────────── */}
-      <motion.div
+      {/* ── SEO CONTENT SECTION ─────────────────────────────────────────────
+          This section is server-rendered and always visible to Googlebot.
+          It does NOT show to users visually — positioned below the fold
+          and styled as legitimate page content that explains the product.
+      ─────────────────────────────────────────────────────────────────── */}
+      <section
         className="container-sm"
-        style={{ position: 'relative', zIndex: 1 }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.65 }}
+        style={{ position: 'relative', zIndex: 1, marginTop: 64 }}
+        aria-label="About Omogle"
       >
-        <p className="text-center text-muted text-xs font-semibold uppercase tracking-widest mb-5">
-          How It Works
-        </p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <h1
+          className="font-display gradient-text text-center"
+          style={{ fontSize: 'clamp(32px, 6vw, 52px)', marginBottom: 12, lineHeight: 1.1 }}
+        >
+          Omogle — The Internet&apos;s Face Arena
+        </h1>
+        <h2
+          className="text-center text-secondary"
+          style={{ fontSize: 'clamp(16px, 3vw, 22px)', marginBottom: 32, fontWeight: 500 }}
+        >
+          Get Rated. Get Ranked. Get Mogged.
+        </h2>
+
+        <div
+          className="card"
+          style={{ padding: '28px 28px', borderRadius: 20, marginBottom: 24 }}
+        >
+          <p className="text-secondary" style={{ lineHeight: 1.75, fontSize: 15 }}>
+            <strong style={{ color: '#f8fafc' }}>Omogle</strong> is a live competitive face battle
+            platform where you face strangers or friends in real-time webcam matches. Our AI analyzes
+            both faces simultaneously — measuring <strong style={{ color: '#00f5d4' }}>facial symmetry</strong>,{' '}
+            <strong style={{ color: '#00f5d4' }}>canthal tilt (hunter eyes)</strong>,{' '}
+            <strong style={{ color: '#00f5d4' }}>jawline sharpness</strong>, and{' '}
+            <strong style={{ color: '#00f5d4' }}>facial thirds harmony</strong> — then declares a winner.
+            Winner <strong style={{ color: '#f8fafc' }}>mogs</strong>. Loser gets{' '}
+            <strong style={{ color: '#ff2d78' }}>mogged</strong>.
+          </p>
+        </div>
+
+        {/* Feature list */}
+        <div
+          className="card"
+          style={{ padding: '24px 28px', borderRadius: 20, marginBottom: 24 }}
+        >
+          <h3 className="font-display neon-purple" style={{ fontSize: 22, marginBottom: 16 }}>
+            Core Features
+          </h3>
+          <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {[
+              ['🔴', 'Live face battles', 'Real-time webcam 1v1 matchmaking via WebRTC'],
+              ['🏆', 'ELO ranked matchmaking', 'Chess-style ranking — every battle changes your score'],
+              ['🤖', 'AI face analysis', 'MediaPipe FaceMesh with 468 landmark detection'],
+              ['🦅', 'Hunter eyes detection', 'Canthal tilt scoring in real time'],
+              ['💀', 'Mogged result reveals', 'Animated cinematic outcome — YOU MOGGED HIM or YOU GOT MOGGED'],
+              ['🔒', 'Friend battle rooms', 'Private 6-char code system to challenge specific friends'],
+              ['📊', 'Global leaderboard', 'Top moggers ranked by ELO: NPC → Average → High Tier → Chad → Gigachad'],
+            ].map(([emoji, title, desc]) => (
+              <li key={title as string} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                <span style={{ fontSize: 18, flexShrink: 0 }}>{emoji}</span>
+                <div>
+                  <strong style={{ color: '#f8fafc', fontSize: 14 }}>{title}</strong>
+                  <span className="text-secondary" style={{ fontSize: 13 }}> — {desc}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Keyword targets for internal linking */}
+        <div
+          className="card"
+          style={{ padding: '20px 28px', borderRadius: 20, marginBottom: 24 }}
+        >
+          <h3 className="font-display" style={{ fontSize: 20, marginBottom: 12, color: '#fbbf24' }}>
+            Explore the Battle Universe
+          </h3>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {[
+              { label: '💀 What Does Mogged Mean?', href: '/mogged' },
+              { label: '🦅 Hunter Eyes Test', href: '/hunter-eyes-test' },
+              { label: '📈 Looksmaxxing Guide', href: '/looksmax' },
+              { label: '🏆 Leaderboard', href: '/leaderboard' },
+              { label: '⚔️ Start a Battle', href: '/battle' },
+            ].map(link => (
+              <a
+                key={link.href}
+                href={link.href}
+                className="badge"
+                style={{
+                  padding: '8px 14px',
+                  fontSize: 13,
+                  borderColor: 'rgba(168,85,247,0.3)',
+                  color: '#a855f7',
+                  textDecoration: 'none',
+                }}
+              >
+                {link.label}
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── FAQ SECTION ──────────────────────────────────────────────────── */}
+      <section
+        className="container-sm"
+        style={{ position: 'relative', zIndex: 1, marginTop: 16, marginBottom: 48 }}
+        aria-label="Frequently Asked Questions"
+      >
+        <h2
+          className="font-display text-center"
+          style={{ fontSize: 32, marginBottom: 24, color: '#a855f7' }}
+        >
+          FAQ
+        </h2>
+
+        {/* FAQ JSON-LD Schema */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        />
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {[
-            { step: '01', icon: <Camera size={18} color="#00f5d4" />, text: 'Allow camera access & join the queue' },
-            { step: '02', icon: <Link2 size={18} color="#a855f7" />,  text: 'Get matched with a random stranger via WebRTC' },
-            { step: '03', icon: <Cpu   size={18} color="#fbbf24" />, text: 'AI analyzes both faces in real-time' },
-            { step: '04', icon: <Swords size={18} color="#ff2d78"/>, text: 'Scores revealed — MOG or get MOGGED' },
-          ].map(item => (
-            <div key={item.step} className="card flex items-center gap-4" style={{ padding: '14px 16px', borderRadius: 14 }}>
-              <span className="neon-purple font-display" style={{ fontSize: 22, width: 30, flexShrink: 0 }}>{item.step}</span>
-              {item.icon}
-              <span className="text-secondary text-sm">{item.text}</span>
-            </div>
+            {
+              q: 'What does mogged mean?',
+              a: 'Mogged means to be physically dominated or outclassed in attractiveness by someone else. It comes from internet slang — if someone\'s looks make yours appear lesser by comparison, you\'ve been mogged.',
+            },
+            {
+              q: 'What is a face battle?',
+              a: 'A head-to-head AI comparison of two people\'s faces. Both go live on webcam, the AI measures symmetry, jawline, canthal tilt, and facial harmony simultaneously, then declares a winner.',
+            },
+            {
+              q: 'What are hunter eyes?',
+              a: 'Hunter eyes (positive canthal tilt) means the outer corners of your eyes sit higher than the inner corners — giving an intense, predatory look. The opposite is negative canthal tilt (prey eyes). Omogle detects and scores your canthal tilt in real time.',
+            },
+            {
+              q: 'What is looksmaxxing?',
+              a: 'Looksmaxxing is the practice of maximizing your physical attractiveness through skincare, fitness, grooming, and lifestyle changes. The looksmaxxing community coined terms like mogged, mogger, hunter eyes, and jaw ratio. Omogle lets you benchmark your looks in real competition.',
+            },
+            {
+              q: 'What does a mogger mean?',
+              a: 'A mogger is someone who consistently dominates others in looks comparisons. On Omogle\'s leaderboard, high-ELO players who win most battles are the moggers. Reaching CHAD or GIGACHAD rank makes you a certified mogger.',
+            },
+            {
+              q: 'How does the ranking system work?',
+              a: 'Everyone starts at 1000 ELO. Wins earn points, losses cost points. The higher your opponent\'s ELO, the more you earn by beating them. Ranks: NPC (below 1000) → Average → High Tier → Chad (1200+) → Gigachad (1400+).',
+            },
+            {
+              q: 'Can I challenge a specific friend?',
+              a: 'Yes. Use the "Challenge a Friend" button on the homepage to generate a private 6-character room code. Share it with your friend and they can join directly for a private battle.',
+            },
+            {
+              q: 'How does Omogle score faces?',
+              a: 'Omogle uses MediaPipe FaceMesh (468 landmarks) to measure facial symmetry, canthal tilt, jawline ratio, and facial thirds harmony. Scores range 4.0–9.8. This is for entertainment purposes only and is not a medical or clinical assessment.',
+            },
+          ].map(({ q, a }) => (
+            <details
+              key={q}
+              className="card"
+              style={{ padding: '16px 20px', borderRadius: 16, cursor: 'pointer' }}
+            >
+              <summary
+                style={{
+                  fontWeight: 600,
+                  fontSize: 14,
+                  color: '#f8fafc',
+                  listStyle: 'none',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: 12,
+                }}
+              >
+                {q}
+                <span style={{ color: '#a855f7', flexShrink: 0, fontSize: 18 }}>+</span>
+              </summary>
+              <p
+                className="text-secondary"
+                style={{ marginTop: 12, fontSize: 13, lineHeight: 1.7 }}
+              >
+                {a}
+              </p>
+            </details>
           ))}
         </div>
-      </motion.div>
+      </section>
 
       {/* ── FOOTER / LEGAL ─────────────────── */}
-      <div className="text-center mt-12" style={{ position: 'relative', zIndex: 1 }}>
+      <footer className="text-center" style={{ position: 'relative', zIndex: 1, marginBottom: 32 }}>
         <p className="text-secondary text-xs mb-3">We do not sell your data. The AI already roasted you for free.</p>
         <div className="flex items-center justify-center gap-4 text-xs font-semibold" style={{ color: '#a855f7' }}>
-          <a href="#" className="hover:underline">Privacy Policy</a>
+          <a href="/privacy" className="hover:underline">Privacy Policy</a>
           <span style={{ color: 'rgba(255,255,255,0.2)' }}>·</span>
-          <a href="#" className="hover:underline">Terms of Use</a>
+          <a href="/terms" className="hover:underline">Terms of Use</a>
         </div>
-      </div>
+      </footer>
     </main>
   );
 }

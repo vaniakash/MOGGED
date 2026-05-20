@@ -541,3 +541,32 @@ body::after {
   .md-grid-4 { grid-template-columns: repeat(4, 1fr); }
   .text-5xl-md { font-size: 60px; }
 }
+
+/* ── 12. SEO LANDING PAGE STYLES ─────────────────────────────── */
+
+/* Accordion / FAQ details element */
+details summary::-webkit-details-marker { display: none; }
+details[open] summary span:last-child { transform: rotate(45deg); display: inline-block; }
+details summary { cursor: pointer; }
+details summary:hover { opacity: 0.85; }
+
+/* Hover effects for badge links */
+.badge:hover {
+  border-color: rgba(168, 85, 247, 0.6);
+  background: rgba(168, 85, 247, 0.1);
+  transition: all 0.18s ease;
+}
+
+/* Spin animation (used in battle page) */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Landing page section separator */
+.seo-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(168,85,247,0.3), transparent);
+  margin: 48px 0;
+}
+
