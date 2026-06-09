@@ -251,6 +251,33 @@ export default function HomepageHero() {
               >
                 🔗 Friend Battle
               </button>
+
+              <button
+                id="stranger-love-btn"
+                onClick={() => router.push('/chat')}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: 8,
+                  border: '1px solid #2a2f3a',
+                  background: '#181b21',
+                  color: '#f87171',
+                  fontFamily: 'inherit',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  transition: 'background 0.2s',
+                  marginTop: 4,
+                }}
+                onMouseOver={(e) => e.currentTarget.style.background = '#1e222a'}
+                onMouseOut={(e) => e.currentTarget.style.background = '#181b21'}
+              >
+                💬 Find Your Stranger Love
+              </button>
             </div>
           </div>
 

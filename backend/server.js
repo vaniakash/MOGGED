@@ -49,8 +49,11 @@ if (process.env.MONGODB_URI) {
 
 // ── In-memory state ────────────────────────────────────────────────────────
 const waitingQueue    = [];         // [{ socketId, sessionId }]
+const chatWaitingQueue = [];        // [{ socketId, sessionId }]
 const rooms           = new Map();  // roomId → RoomState
+const chatRooms       = new Map();  // roomId → { userA, userB }
 const socketToRoom    = new Map();  // socketId → roomId
+const socketToChatRoom = new Map(); // socketId → roomId
 const socketToSession = new Map();  // socketId → sessionId
 const roomTimers      = new Map();  // roomId → timer
 const privateRooms    = new Map();  // code → { socketId, sessionId }  (friend battle)
@@ -80,6 +83,11 @@ app.post('/api/session', async (_, res) => {
 function removeFromQueue(socketId) {
   const idx = waitingQueue.findIndex(u => u.socketId === socketId);
   if (idx !== -1) waitingQueue.splice(idx, 1);
+}
+
+function removeFromChatQueue(socketId) {
+  const idx = chatWaitingQueue.findIndex(u => u.socketId === socketId);
+  if (idx !== -1) chatWaitingQueue.splice(idx, 1);
 }
 
 function clearRoomTimer(roomId) {
@@ -121,6 +129,32 @@ function tryMatch() {
     socketA.emit('matched', { roomId, role: 'initiator' });
     socketB.emit('matched', { roomId, role: 'receiver'  });
     console.log(`🎭 Matched: ${userA.socketId} ↔ ${userB.socketId} in room ${roomId}`);
+  }
+}
+
+function tryChatMatch() {
+  while (chatWaitingQueue.length >= 2) {
+    const userA = chatWaitingQueue.shift();
+    const userB = chatWaitingQueue.shift();
+    if (!io.sockets.sockets.get(userA.socketId)) { chatWaitingQueue.unshift(userB); continue; }
+    if (!io.sockets.sockets.get(userB.socketId)) { chatWaitingQueue.unshift(userA); continue; }
+
+    const roomId = uuidv4();
+    chatRooms.set(roomId, {
+      userA: { socketId: userA.socketId, sessionId: userA.sessionId },
+      userB: { socketId: userB.socketId, sessionId: userB.sessionId }
+    });
+    socketToChatRoom.set(userA.socketId, roomId);
+    socketToChatRoom.set(userB.socketId, roomId);
+
+    const socketA = io.sockets.sockets.get(userA.socketId);
+    const socketB = io.sockets.sockets.get(userB.socketId);
+    socketA.join(roomId);
+    socketB.join(roomId);
+
+    socketA.emit('chat_matched', { roomId, role: 'initiator' });
+    socketB.emit('chat_matched', { roomId, role: 'receiver' });
+    console.log(`💬 Chat Matched: ${userA.socketId} ↔ ${userB.socketId} in room ${roomId}`);
   }
 }
 
@@ -281,6 +315,43 @@ io.on('connection', (socket) => {
     socket.emit('queue_left');
   });
 
+  // ── TEXT CHAT MATCHMAKING ───────────────────────────────────────────────
+  socket.on('join_chat_queue', ({ sessionId }) => {
+    const sid = sessionId || uuidv4();
+    socketToSession.set(socket.id, sid);
+    removeFromChatQueue(socket.id);
+    chatWaitingQueue.push({ socketId: socket.id, sessionId: sid });
+    console.log(`💬 Queued for chat: ${socket.id} (q=${chatWaitingQueue.length})`);
+    tryChatMatch();
+  });
+
+  socket.on('leave_chat_queue', () => {
+    removeFromChatQueue(socket.id);
+  });
+
+  socket.on('chat_message', ({ roomId, text }) => {
+    socket.to(roomId).emit('chat_message', { senderId: socket.id, text });
+  });
+
+  socket.on('next_chat_match', () => {
+    const roomId = socketToChatRoom.get(socket.id);
+    if (roomId) {
+      socket.to(roomId).emit('chat_opponent_left');
+      const room = chatRooms.get(roomId);
+      if (room) {
+        const otherId = room.userA.socketId === socket.id ? room.userB.socketId : room.userA.socketId;
+        socketToChatRoom.delete(otherId);
+      }
+      socketToChatRoom.delete(socket.id);
+      chatRooms.delete(roomId);
+      socket.leave(roomId);
+    }
+    removeFromChatQueue(socket.id);
+    const sessionId = socketToSession.get(socket.id) || uuidv4();
+    chatWaitingQueue.push({ socketId: socket.id, sessionId });
+    tryChatMatch();
+  });
+
   // ── WebRTC signaling ──────────────────────────────────────────────────
   socket.on('webrtc_signal', ({ roomId, signal }) => {
     socket.to(roomId).emit('webrtc_signal', { signal, from: socket.id });
@@ -364,6 +435,20 @@ io.on('connection', (socket) => {
       socketToRoom.delete(socket.id);
       rooms.delete(roomId);
     }
+    
+    removeFromChatQueue(socket.id);
+    const chatRoomId = socketToChatRoom.get(socket.id);
+    if (chatRoomId) {
+      socket.to(chatRoomId).emit('chat_opponent_left');
+      const cRoom = chatRooms.get(chatRoomId);
+      if (cRoom) {
+        const otherId = cRoom.userA.socketId === socket.id ? cRoom.userB.socketId : cRoom.userA.socketId;
+        socketToChatRoom.delete(otherId);
+      }
+      socketToChatRoom.delete(socket.id);
+      chatRooms.delete(chatRoomId);
+    }
+
     socketToSession.delete(socket.id);
   });
 });
