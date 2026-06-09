@@ -93,39 +93,78 @@ const faqSchema = {
 
 export default function HomePage() {
   return (
-    <main className="page-center" style={{ paddingTop: 48, paddingBottom: 48 }}>
+    <main style={{
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      position: 'relative',
+      zIndex: 1,
+      paddingTop: 24,
+      paddingBottom: 48,
+    }}>
+
+      {/* ── TOP LOGO ── */}
+      <div style={{ marginBottom: 16, zIndex: 100, display: 'flex', justifyContent: 'center' }}>
+        <a href="/">
+          <img src="/logo-omogle.png" alt="Omogle Logo" style={{ height: 80, objectFit: 'contain' }} />
+        </a>
+      </div>
 
       {/* ── INTERACTIVE HERO (client component) ── */}
       <HomepageHero />
 
       {/* ── SEO CONTENT SECTION ─────────────────────────────────────────────
-          This section is server-rendered and always visible to Googlebot.
-          It does NOT show to users visually — positioned below the fold
-          and styled as legitimate page content that explains the product.
+          Server-rendered, crawlable by Googlebot, positioned below the fold.
       ─────────────────────────────────────────────────────────────────── */}
       <section
-        className="container-sm"
-        style={{ position: 'relative', zIndex: 1, marginTop: 64 }}
+        style={{
+          width: '100%',
+          maxWidth: 640,
+          margin: '0 auto',
+          padding: '0 16px',
+          position: 'relative',
+          zIndex: 1,
+          marginTop: 32,
+        }}
         aria-label="About Omogle"
       >
         <h1
-          className="font-display gradient-text text-center"
-          style={{ fontSize: 'clamp(32px, 6vw, 52px)', marginBottom: 12, lineHeight: 1.1 }}
+          style={{
+            fontFamily: 'Bebas Neue, cursive',
+            fontSize: 'clamp(32px, 6vw, 52px)',
+            lineHeight: 1.1,
+            textAlign: 'center',
+            marginBottom: 12,
+            background: 'linear-gradient(135deg, #00f5d4 0%, #a855f7 50%, #ff2d78 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}
         >
           Omogle — The Internet&apos;s Face Arena
         </h1>
         <h2
-          className="text-center text-secondary"
-          style={{ fontSize: 'clamp(16px, 3vw, 22px)', marginBottom: 32, fontWeight: 500 }}
+          style={{
+            textAlign: 'center',
+            color: '#64748b',
+            fontSize: 'clamp(15px, 2.5vw, 20px)',
+            marginBottom: 32,
+            fontWeight: 500,
+          }}
         >
           Get Rated. Get Ranked. Get Mogged.
         </h2>
 
-        <div
-          className="card"
-          style={{ padding: '28px 28px', borderRadius: 20, marginBottom: 24 }}
-        >
-          <p className="text-secondary" style={{ lineHeight: 1.75, fontSize: 15 }}>
+        {/* About card */}
+        <div style={{
+          background: 'rgba(255,255,255,0.02)',
+          border: '1px solid rgba(255,255,255,0.06)',
+          borderRadius: 20,
+          padding: '28px',
+          marginBottom: 20,
+        }}>
+          <p style={{ color: '#64748b', lineHeight: 1.75, fontSize: 15 }}>
             <strong style={{ color: '#f8fafc' }}>Omogle</strong> is a live competitive face battle
             platform where you face strangers or friends in real-time webcam matches. Our AI analyzes
             both faces simultaneously — measuring <strong style={{ color: '#00f5d4' }}>facial symmetry</strong>,{' '}
@@ -138,11 +177,20 @@ export default function HomePage() {
         </div>
 
         {/* Feature list */}
-        <div
-          className="card"
-          style={{ padding: '24px 28px', borderRadius: 20, marginBottom: 24 }}
-        >
-          <h3 className="font-display neon-purple" style={{ fontSize: 22, marginBottom: 16 }}>
+        <div style={{
+          background: 'rgba(255,255,255,0.02)',
+          border: '1px solid rgba(255,255,255,0.06)',
+          borderRadius: 20,
+          padding: '24px 28px',
+          marginBottom: 20,
+        }}>
+          <h3 style={{
+            fontFamily: 'Bebas Neue, cursive',
+            color: '#a855f7',
+            fontSize: 22,
+            marginBottom: 16,
+            textShadow: '0 0 20px rgba(168,85,247,0.6)',
+          }}>
             Core Features
           </h3>
           <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -159,19 +207,22 @@ export default function HomePage() {
                 <span style={{ fontSize: 18, flexShrink: 0 }}>{emoji}</span>
                 <div>
                   <strong style={{ color: '#f8fafc', fontSize: 14 }}>{title}</strong>
-                  <span className="text-secondary" style={{ fontSize: 13 }}> — {desc}</span>
+                  <span style={{ color: '#475569', fontSize: 13 }}> — {desc}</span>
                 </div>
               </li>
             ))}
           </ul>
         </div>
 
-        {/* Keyword targets for internal linking */}
-        <div
-          className="card"
-          style={{ padding: '20px 28px', borderRadius: 20, marginBottom: 24 }}
-        >
-          <h3 className="font-display" style={{ fontSize: 20, marginBottom: 12, color: '#fbbf24' }}>
+        {/* Quick links */}
+        <div style={{
+          background: 'rgba(255,255,255,0.02)',
+          border: '1px solid rgba(255,255,255,0.06)',
+          borderRadius: 20,
+          padding: '20px 28px',
+          marginBottom: 24,
+        }}>
+          <h3 style={{ fontSize: 18, marginBottom: 12, color: '#fbbf24', fontWeight: 700 }}>
             Explore the Battle Universe
           </h3>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -185,13 +236,18 @@ export default function HomePage() {
               <a
                 key={link.href}
                 href={link.href}
-                className="badge"
                 style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
                   padding: '8px 14px',
+                  borderRadius: 9999,
                   fontSize: 13,
-                  borderColor: 'rgba(168,85,247,0.3)',
+                  fontWeight: 600,
+                  border: '1px solid rgba(168,85,247,0.25)',
                   color: '#a855f7',
                   textDecoration: 'none',
+                  background: 'rgba(168,85,247,0.05)',
+                  transition: 'all 0.18s ease',
                 }}
               >
                 {link.label}
@@ -203,13 +259,27 @@ export default function HomePage() {
 
       {/* ── FAQ SECTION ──────────────────────────────────────────────────── */}
       <section
-        className="container-sm"
-        style={{ position: 'relative', zIndex: 1, marginTop: 16, marginBottom: 48 }}
+        style={{
+          width: '100%',
+          maxWidth: 640,
+          margin: '0 auto',
+          padding: '0 16px',
+          position: 'relative',
+          zIndex: 1,
+          marginTop: 16,
+          marginBottom: 48,
+        }}
         aria-label="Frequently Asked Questions"
       >
         <h2
-          className="font-display text-center"
-          style={{ fontSize: 32, marginBottom: 24, color: '#a855f7' }}
+          style={{
+            fontFamily: 'Bebas Neue, cursive',
+            textAlign: 'center',
+            fontSize: 36,
+            marginBottom: 24,
+            color: '#a855f7',
+            textShadow: '0 0 24px rgba(168,85,247,0.5)',
+          }}
         >
           FAQ
         </h2>
@@ -220,7 +290,7 @@ export default function HomePage() {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
         />
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {[
             {
               q: 'What does mogged mean?',
@@ -257,8 +327,13 @@ export default function HomePage() {
           ].map(({ q, a }) => (
             <details
               key={q}
-              className="card"
-              style={{ padding: '16px 20px', borderRadius: 16, cursor: 'pointer' }}
+              style={{
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: 14,
+                overflow: 'hidden',
+                cursor: 'pointer',
+              }}
             >
               <summary
                 style={{
@@ -270,14 +345,20 @@ export default function HomePage() {
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   gap: 12,
+                  padding: '16px 20px',
                 }}
               >
                 {q}
                 <span style={{ color: '#a855f7', flexShrink: 0, fontSize: 18 }}>+</span>
               </summary>
               <p
-                className="text-secondary"
-                style={{ marginTop: 12, fontSize: 13, lineHeight: 1.7 }}
+                style={{
+                  color: '#64748b',
+                  padding: '0 20px 16px',
+                  fontSize: 13,
+                  lineHeight: 1.7,
+                  marginTop: 0,
+                }}
               >
                 {a}
               </p>
@@ -286,13 +367,29 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── FOOTER / LEGAL ─────────────────── */}
-      <footer className="text-center" style={{ position: 'relative', zIndex: 1, marginBottom: 32 }}>
-        <p className="text-secondary text-xs mb-3">We do not sell your data. The AI already roasted you for free.</p>
-        <div className="flex items-center justify-center gap-4 text-xs font-semibold" style={{ color: '#a855f7' }}>
-          <a href="/privacy" className="hover:underline">Privacy Policy</a>
-          <span style={{ color: 'rgba(255,255,255,0.2)' }}>·</span>
-          <a href="/terms" className="hover:underline">Terms of Use</a>
+      {/* ── FOOTER ─────────────────── */}
+      <footer style={{
+        textAlign: 'center',
+        position: 'relative',
+        zIndex: 1,
+        marginBottom: 32,
+        padding: '0 16px',
+      }}>
+        <p style={{ color: '#334155', fontSize: 12, marginBottom: 12 }}>
+          We do not sell your data. The AI already roasted you for free.
+        </p>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 16,
+          fontSize: 12,
+          fontWeight: 600,
+          color: '#a855f7',
+        }}>
+          <a href="/privacy" style={{ color: '#a855f7', textDecoration: 'none' }}>Privacy Policy</a>
+          <span style={{ color: 'rgba(255,255,255,0.1)' }}>·</span>
+          <a href="/terms" style={{ color: '#a855f7', textDecoration: 'none' }}>Terms of Use</a>
         </div>
       </footer>
     </main>

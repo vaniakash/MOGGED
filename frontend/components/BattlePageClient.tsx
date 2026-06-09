@@ -271,7 +271,7 @@ function BattlePageInner() {
       {/* ── NAV ── */}
       <nav className="nav">
         <a href="/" className="nav-logo" style={{ display: 'flex', alignItems: 'center' }}>
-          <img src="/omogle-logo.svg" alt="Ommogale" style={{ height: 32, objectFit: 'contain' }} />
+          <img src="/omogle-logo.svg" alt="Ommogale" style={{ height: 56, objectFit: 'contain' }} />
         </a>
         <div className="nav-actions">
           {initState === 'loading' && (
@@ -304,57 +304,51 @@ function BattlePageInner() {
 
           {/* FRIEND LOBBY */}
           {phase === 'friend_lobby' && (
-            <motion.div key="friend" className="container-sm text-center"
+            <motion.div key="friend" className="container-md text-center"
               initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
 
-              <div className="font-display gradient-text" style={{ fontSize: 42, marginBottom: 8 }}>⚔️ FRIEND BATTLE</div>
-              <p className="text-secondary mb-8" style={{ fontSize: 14 }}>Challenge a specific friend — share a code or enter theirs</p>
+              <h2 style={{ fontSize: 28, fontWeight: 600, marginBottom: 8, color: '#f8fafc' }}>Friend Battle</h2>
+              <p style={{ color: '#94a3b8', fontSize: 15, marginBottom: 32 }}>Challenge a specific friend — share a code or enter theirs</p>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, marginBottom: 24, textAlign: 'left' }}>
 
                 {/* CREATE ROOM */}
-                <div className="card" style={{ padding: 24, borderRadius: 20, borderColor: 'rgba(0,245,212,0.35)' }}>
-                  <div className="font-display neon-cyan mb-3" style={{ fontSize: 18 }}>YOUR CODE</div>
-                  <p className="text-muted mb-4" style={{ fontSize: 12 }}>Share this code with your friend to battle</p>
+                <div style={{ flex: '1 1 240px', padding: 24, borderRadius: 12, background: '#0f1115', border: '1px solid #1e222a' }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 600, color: '#f8fafc', marginBottom: 6 }}>Your Code</h3>
+                  <p style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>Share this code with your friend</p>
                   {privateCode ? (
                     <>
-                      <div className="font-display text-center mb-3"
-                        style={{ fontSize: 36, color: '#00f5d4', letterSpacing: '0.2em',
-                          textShadow: '0 0 24px rgba(0,245,212,0.6)', background: 'rgba(0,245,212,0.06)',
-                          padding: '12px 8px', borderRadius: 12, border: '1px solid rgba(0,245,212,0.3)' }}>
+                      <div style={{ fontSize: 28, letterSpacing: '0.1em', fontWeight: 600, color: '#f8fafc', textAlign: 'center', background: '#181b21', padding: '16px 0', borderRadius: 8, marginBottom: 16 }}>
                         {privateCode}
                       </div>
-                      <button className="btn btn-ghost btn-sm w-full" style={{ width: '100%' }}
+                      <button style={{ width: '100%', padding: '10px 0', background: '#f8fafc', color: '#050508', border: 'none', borderRadius: 8, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer' }}
                         onClick={() => { navigator.clipboard.writeText(privateCode); setCopied(true); setTimeout(() => setCopied(false), 2000); }}>
-                        {copied ? <><Check size={14} color="#4ade80" /> Copied!</> : <><Copy size={14} /> Copy Code</>}
+                        {copied ? <><Check size={16} /> Copied</> : <><Copy size={16} /> Copy Code</>}
                       </button>
-                      <p className="text-muted mt-3" style={{ fontSize: 11 }}>Waiting for friend to join<span className="loading-dots"><span>.</span><span>.</span><span>.</span></span></p>
+                      <p style={{ textAlign: 'center', fontSize: 13, color: '#64748b', marginTop: 16 }}>Waiting for friend...</p>
                     </>
                   ) : (
-                    <div className="flex flex-col items-center justify-center py-4">
-                      <p className="text-muted mb-2 text-sm">Generating code...</p>
-                      <div style={{ width: 20, height: 20, border: '2px solid rgba(0,245,212,0.2)', borderTopColor: '#00f5d4', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                    <div style={{ textAlign: 'center', padding: '24px 0' }}>
+                      <p style={{ fontSize: 13, color: '#64748b' }}>Generating...</p>
                     </div>
                   )}
                 </div>
 
                 {/* JOIN ROOM */}
-                <div className="card" style={{ padding: 24, borderRadius: 20, borderColor: 'rgba(168,85,247,0.35)' }}>
-                  <div className="font-display neon-purple mb-3" style={{ fontSize: 18 }}>JOIN ROOM</div>
-                  <p className="text-muted mb-4" style={{ fontSize: 12 }}>Enter the code your friend shared with you</p>
+                <div style={{ flex: '1 1 240px', padding: 24, borderRadius: 12, background: '#0f1115', border: '1px solid #1e222a' }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 600, color: '#f8fafc', marginBottom: 6 }}>Join Room</h3>
+                  <p style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>Enter the code your friend shared</p>
                   <input
-                    type="text" maxLength={6} placeholder="e.g. A3F8X2"
+                    type="text" maxLength={6} placeholder="CODE"
                     value={joinCode}
                     onChange={e => { setJoinCode(e.target.value.toUpperCase()); setPrivateError(null); }}
                     style={{
-                      width: '100%', background: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(168,85,247,0.4)', borderRadius: 10,
-                      padding: '10px 12px', color: '#fff', fontSize: 20,
-                      fontFamily: 'var(--font-display)', letterSpacing: '0.2em',
-                      textAlign: 'center', marginBottom: 12, outline: 'none',
+                      width: '100%', background: '#181b21', border: '1px solid #2a2f3a', borderRadius: 8,
+                      padding: '16px 12px', color: '#f8fafc', fontSize: 20, letterSpacing: '0.1em',
+                      textAlign: 'center', marginBottom: 16, outline: 'none',
                     }}
                   />
-                  <button className="btn w-full" style={{ width: '100%', background: 'linear-gradient(135deg,#a855f7,#7c3aed)', color: '#fff', border: 'none' }}
+                  <button style={{ width: '100%', padding: '10px 0', background: joinCode.length < 4 ? '#2a2f3a' : '#f8fafc', color: joinCode.length < 4 ? '#64748b' : '#050508', border: 'none', borderRadius: 8, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: joinCode.length < 4 ? 'not-allowed' : 'pointer', transition: 'all 0.2s' }}
                     disabled={joinCode.length < 4}
                     onClick={() => {
                       const sid = localStorage.getItem('sessionId') || genUUID();
@@ -364,19 +358,18 @@ function BattlePageInner() {
                       s.emit('join_private_room', { code: joinCode, sessionId: sid });
                       setPrivateError(null);
                     }}>
-                    <LogIn size={15} /> Join Battle
+                    <LogIn size={16} /> Join Battle
                   </button>
                 </div>
               </div>
 
               {privateError && (
-                <motion.div className="card card-pink text-center" style={{ padding: '10px 16px', borderRadius: 12, marginBottom: 16 }}
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                  <span className="neon-pink" style={{ fontSize: 13 }}>⚠️ {privateError}</span>
-                </motion.div>
+                <div style={{ background: '#1f1315', border: '1px solid #4a1c22', color: '#f87171', padding: '12px', borderRadius: 8, marginBottom: 16, fontSize: 14 }}>
+                  {privateError}
+                </div>
               )}
 
-              <button className="btn btn-ghost" style={{ fontSize: 13 }} onClick={() => { setPhase('idle'); setPrivateCode(null); setJoinCode(''); }}>
+              <button style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: 14, cursor: 'pointer', padding: '8px 16px' }} onClick={() => { setPhase('idle'); setPrivateCode(null); setJoinCode(''); }}>
                 ← Back
               </button>
             </motion.div>
@@ -386,15 +379,16 @@ function BattlePageInner() {
           {phase === 'idle' && (
             <motion.div key="idle" className="text-center container-sm"
               initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }}>
-              <div className="font-display gradient-text" style={{ fontSize: 80, lineHeight: 1, marginBottom: 16 }}>
+              <h2 style={{ fontSize: 48, fontWeight: 700, color: '#f8fafc', marginBottom: 16, letterSpacing: '0.05em' }}>
                 READY?
-              </div>
-              <p className="text-secondary mb-8" style={{ maxWidth: 380, margin: '0 auto 32px', lineHeight: 1.6 }}>
+              </h2>
+              <p style={{ color: '#94a3b8', fontSize: 16, maxWidth: 420, margin: '0 auto 32px', lineHeight: 1.6 }}>
                 You&apos;ll be matched with a random stranger. Both cameras go live, a 10-second AI analysis runs, and the server decides who mogged who.
               </p>
-              <motion.button id="start-battle-btn" className="btn btn-primary btn-xl"
-                whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} onClick={joinQueue}>
-                <Zap size={20} strokeWidth={2.5} /> START BATTLE
+              <motion.button id="start-battle-btn" 
+                style={{ background: '#f8fafc', color: '#050508', border: 'none', borderRadius: 8, padding: '16px 32px', fontSize: 16, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
+                whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={joinQueue}>
+                <Zap size={18} strokeWidth={2.5} /> Start Battle
               </motion.button>
             </motion.div>
           )}
