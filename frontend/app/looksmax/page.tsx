@@ -3,17 +3,17 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Looksmaxxing & Facial Symmetry Test | Omogle Face Battle',
+  title: 'Looksmaxxing & Facial Symmetry Test | Omogl Face Battle',
   description:
-    'Looksmaxxing means maximizing your physical attractiveness. Test your facial symmetry, jawline, hunter eyes, and face rating live on Omogle — the AI face battle platform built for the looksmax community.',
+    'Looksmaxxing means maximizing your physical attractiveness. Test your facial symmetry, jawline, hunter eyes, and face rating live on Omogl — the AI face battle platform built for the looksmax community.',
   alternates: {
-    canonical: 'https://omogle.vercel.app/looksmax',
+    canonical: 'https://omogl.com/looksmax',
   },
   openGraph: {
-    title: 'Looksmaxxing & Facial Symmetry Test | Omogle Face Battle',
+    title: 'Looksmaxxing & Facial Symmetry Test | Omogl Face Battle',
     description:
       'Test your facial symmetry, jawline, and hunter eyes in live AI face battles. Built for the looksmax community.',
-    url: 'https://omogle.vercel.app/looksmax',
+    url: 'https://omogl.com/looksmax',
   },
 };
 
@@ -34,7 +34,7 @@ const faqSchema = {
       name: 'What is a facial symmetry test?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'A facial symmetry test measures how symmetrical your face is — whether your left and right sides align closely. High facial symmetry is associated with genetic health and attractiveness. Omogle\'s AI measures your facial symmetry in real time using MediaPipe FaceMesh, analyzing the alignment of your nose tip, mouth, and eye positions relative to your face\'s center axis.',
+        text: 'A facial symmetry test measures how symmetrical your face is — whether your left and right sides align closely. High facial symmetry is associated with genetic health and attractiveness. Omogl\'s AI measures your facial symmetry in real time using MediaPipe FaceMesh, analyzing the alignment of your nose tip, mouth, and eye positions relative to your face\'s center axis.',
       },
     },
     {
@@ -47,10 +47,10 @@ const faqSchema = {
     },
     {
       '@type': 'Question',
-      name: 'How is Omogle useful for looksmaxxing?',
+      name: 'How is Omogl useful for looksmaxxing?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Omogle gives looksmaxxers a real-time, competitive benchmark. Instead of analyzing photos in a mirror or forum, you compete live against real people. The AI scores your canthal tilt (hunter eyes), jawline sharpness, facial symmetry, and facial thirds harmony — then compares you directly to another person. Winning means you genuinely scored higher on those dimensions. Your ELO tracks progress over time.',
+        text: 'Omogl gives looksmaxxers a real-time, competitive benchmark. Instead of analyzing photos in a mirror or forum, you compete live against real people. The AI scores your canthal tilt (hunter eyes), jawline sharpness, facial symmetry, and facial thirds harmony — then compares you directly to another person. Winning means you genuinely scored higher on those dimensions. Your ELO tracks progress over time.',
       },
     },
     {
@@ -58,7 +58,7 @@ const faqSchema = {
       name: 'What facial features does the AI rate?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Omogle\'s AI rates: (1) Facial Symmetry — alignment of nose, mouth, and eyes relative to center; (2) Eye Score — canthal tilt (hunter eyes), eye spacing ratio, and eye openness; (3) Jawline — jaw width to face height ratio; (4) Facial Thirds Harmony — how evenly the face divides into thirds from forehead to chin. All four combine into a total score from 4.0 to 9.8.',
+        text: 'Omogl\'s AI rates: (1) Facial Symmetry — alignment of nose, mouth, and eyes relative to center; (2) Eye Score — canthal tilt (hunter eyes), eye spacing ratio, and eye openness; (3) Jawline — jaw width to face height ratio; (4) Facial Thirds Harmony — how evenly the face divides into thirds from forehead to chin. All four combine into a total score from 4.0 to 9.8.',
       },
     },
   ],
@@ -76,7 +76,7 @@ export default function LooksmaxPage() {
       {/* Nav */}
       <nav className="nav">
         <a href="/" className="nav-logo" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <img src="/logo-omogle.png" alt="Omogle" style={{ height: 56, objectFit: 'contain' }} />
+          <img src="/logo-omogl.png" alt="Omogl" style={{ height: 56, objectFit: 'contain' }} />
         </a>
         <div className="nav-actions">
           <a href="/leaderboard" className="btn btn-ghost btn-sm">Leaderboard</a>
@@ -89,7 +89,7 @@ export default function LooksmaxPage() {
         {/* Breadcrumb */}
         <nav aria-label="Breadcrumb" style={{ marginBottom: 24 }}>
           <ol style={{ display: 'flex', gap: 8, listStyle: 'none', fontSize: 12, color: '#475569' }}>
-            <li><a href="/" style={{ color: '#a855f7' }}>Omogle</a></li>
+            <li><a href="/" style={{ color: '#a855f7' }}>Omogl</a></li>
             <li style={{ color: '#475569' }}>/</li>
             <li style={{ color: '#94a3b8' }}>Looksmax</li>
           </ol>
@@ -108,7 +108,7 @@ export default function LooksmaxPage() {
             style={{ maxWidth: 600, margin: '0 auto 12px', fontSize: 16, lineHeight: 1.75 }}
           >
             <strong style={{ color: '#f8fafc' }}>Looksmaxxing</strong> is the practice of maximizing your physical
-            attractiveness. Omogle is where you test it — live, against real people, scored by AI.
+            attractiveness. Omogl is where you test it — live, against real people, scored by AI.
           </p>
           <p className="text-secondary" style={{ marginBottom: 32, fontSize: 14 }}>
             Canthal tilt · Jawline · Symmetry · Facial thirds — all measured in real time.
@@ -171,13 +171,13 @@ export default function LooksmaxPage() {
           </div>
         </section>
 
-        {/* What Omogle scores */}
+        {/* What Omogl scores */}
         <section className="card" style={{ padding: '32px 28px', borderRadius: 20, marginBottom: 48 }}>
           <h2 className="font-display" style={{ fontSize: 26, marginBottom: 20, color: '#00f5d4' }}>
-            What Omogle&apos;s AI Actually Scores
+            What Omogl&apos;s AI Actually Scores
           </h2>
           <p className="text-secondary" style={{ fontSize: 14, lineHeight: 1.7, marginBottom: 20 }}>
-            Omogle uses <strong style={{ color: '#f8fafc' }}>MediaPipe FaceMesh</strong> to detect 468 facial
+            Omogl uses <strong style={{ color: '#f8fafc' }}>MediaPipe FaceMesh</strong> to detect 468 facial
             landmarks in real time via your webcam. Four dimensions are scored:
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -218,10 +218,10 @@ export default function LooksmaxPage() {
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {[
-              { q: 'What is a good face score on Omogle?', a: 'Scores range from 4.0 to 9.8. The majority of users score between 5.5 and 7.5 (Average to Mid-High). A score above 7.5 puts you in the top tier. Above 8.5 is Gigachad territory. Most face battles are decided by small margins.' },
+              { q: 'What is a good face score on Omogl?', a: 'Scores range from 4.0 to 9.8. The majority of users score between 5.5 and 7.5 (Average to Mid-High). A score above 7.5 puts you in the top tier. Above 8.5 is Gigachad territory. Most face battles are decided by small margins.' },
               { q: 'Does looksmaxxing actually work?', a: 'Soft looksmaxxing (skincare, fitness, grooming, haircut) has clear measurable impact on perceived attractiveness. Hard looksmaxxing (surgery, orthotropics) has more dramatic effects but carries significant risks. The community consensus is: maximize what you can control, accept what you cannot.' },
               { q: 'What is facial thirds harmony?', a: 'Facial thirds harmony is the principle that an attractive face divides vertically into three roughly equal sections: forehead (hairline to brow), mid-face (brow to nose bottom), and lower face (nose bottom to chin). When these thirds are equal, the face is considered harmonious.' },
-              { q: 'Can I track my progress on Omogle?', a: 'Yes — your ELO rating tracks across all your battles. If you\'re looksmaxxing and improving, you should see your ELO trend upward over time as you win more face battles. The global leaderboard shows where you rank against all users.' },
+              { q: 'Can I track my progress on Omogl?', a: 'Yes — your ELO rating tracks across all your battles. If you\'re looksmaxxing and improving, you should see your ELO trend upward over time as you win more face battles. The global leaderboard shows where you rank against all users.' },
             ].map(({ q, a }) => (
               <details
                 key={q}
@@ -278,7 +278,7 @@ export default function LooksmaxPage() {
         {/* Internal linking */}
         <div style={{ marginTop: 40, display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
           {[
-            { label: '🏠 Omogle Home', href: '/' },
+            { label: '🏠 Omogl Home', href: '/' },
             { label: '💀 Mogged Meaning', href: '/mogged' },
             { label: '🦅 Hunter Eyes Test', href: '/hunter-eyes-test' },
             { label: '🏆 Leaderboard', href: '/leaderboard' },

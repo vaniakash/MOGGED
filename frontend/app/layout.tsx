@@ -9,23 +9,23 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://omogle.vercel.app'),
+  metadataBase: new URL('https://omogl.com'),
   title: {
-    default: 'Omogle — Face Battle Arena | Get Mogged Online',
-    template: '%s | Omogle'
+    default: 'Omogl — Face Battle Arena | Get Mogged Online',
+    template: '%s | Omogl'
   },
-  description: 'Join live face battles, compare looks, climb ELO rankings, and see who gets mogged. Omogle is the internet\'s real-time competitive face arena — AI-judged, stranger-matched, brutally honest.',
+  description: 'Join live face battles, compare looks, climb ELO rankings, and see who gets mogged. Omogl is the internet\'s real-time competitive face arena — AI-judged, stranger-matched, brutally honest.',
   keywords: [
-    'omogle', 'mogged', 'mogging', 'face battle', 'AI face analysis',
+    'omogl', 'mogged', 'mogging', 'face battle', 'AI face analysis',
     'looksmaxxing', 'looksmax', 'hunter eyes test', 'canthal tilt',
     'facial symmetry test', 'face rating AI', 'attractiveness battle',
     'mogger', 'face duel', 'elo ranking', 'online face battle',
   ],
-  authors: [{ name: 'Omogle' }],
-  creator: 'Omogle',
-  publisher: 'Omogle',
+  authors: [{ name: 'Omogl' }],
+  creator: 'Omogl',
+  publisher: 'Omogl',
   alternates: {
-    canonical: 'https://omogle.vercel.app',
+    canonical: 'https://omogl.com',
   },
   robots: {
     index: true,
@@ -39,31 +39,31 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: 'Omogle — Face Battle Arena | Get Mogged Online',
+    title: 'Omogl — Face Battle Arena | Get Mogged Online',
     description: 'Join live face battles, compare looks, climb ELO rankings, and see who gets mogged. The internet\'s real-time competitive face arena.',
-    url: 'https://omogle.vercel.app',
-    siteName: 'Omogle',
+    url: 'https://omogl.com',
+    siteName: 'Omogl',
     locale: 'en_US',
     type: 'website',
     images: [
       {
-        url: '/logo-omogle.png',
+        url: '/logo-omogl.png',
         width: 1200,
         height: 630,
-        alt: 'Omogle — The Internet\'s Face Arena',
+        alt: 'Omogl — The Internet\'s Face Arena',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Omogle — Face Battle Arena | Get Mogged Online',
+    title: 'Omogl — Face Battle Arena | Get Mogged Online',
     description: 'Join live face battles, compare looks, climb ELO rankings, and see who gets mogged.',
-    images: ['/logo-omogle.png'],
+    images: ['/logo-omogl.png'],
   },
   icons: {
-    icon: '/omogle-logo.svg',
-    shortcut: '/omogle-logo.svg',
-    apple: '/omogle-logo.svg',
+    icon: '/omogl-logo.svg',
+    shortcut: '/omogl-logo.svg',
+    apple: '/omogl-logo.svg',
   },
   verification: {
     google: '1wtS_iaxJD4SYCzjM1eNG3mV-xsjGPkLWcjYXpYVwbg',
@@ -74,8 +74,8 @@ export const metadata: Metadata = {
 const webAppSchema = {
   '@context': 'https://schema.org',
   '@type': 'WebApplication',
-  name: 'Omogle',
-  url: 'https://omogle.vercel.app',
+  name: 'Omogl',
+  url: 'https://omogl.com',
   description: 'Real-time competitive face battle platform. Get matched with strangers, have your face analyzed by AI, and see who gets mogged. ELO-ranked matchmaking with hunter eyes detection, facial symmetry scoring, and live result reveals.',
   applicationCategory: 'EntertainmentApplication',
   operatingSystem: 'Web Browser',
@@ -98,10 +98,10 @@ const webAppSchema = {
 const organizationSchema = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
-  name: 'Omogle',
-  url: 'https://omogle.vercel.app',
-  logo: 'https://omogle.vercel.app/logo-omogle.png',
-  description: 'Omogle is the internet\'s real-time competitive face battle platform. Face off against strangers or friends, get AI-analyzed, and find out who gets mogged.',
+  name: 'Omogl',
+  url: 'https://omogl.com',
+  logo: 'https://omogl.com/logo-omogl.png',
+  description: 'Omogl is the internet\'s real-time competitive face battle platform. Face off against strangers or friends, get AI-analyzed, and find out who gets mogged.',
   sameAs: [],
 };
 

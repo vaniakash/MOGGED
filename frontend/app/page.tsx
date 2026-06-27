@@ -3,11 +3,11 @@ import type { Metadata } from 'next';
 import HomepageHero from '@/components/HomepageHero';
 
 export const metadata: Metadata = {
-  title: 'Omogle — Face Battle Arena | Get Mogged Online',
+  title: 'Omogl — Face Battle Arena | Get Mogged Online',
   description:
-    'Join live face battles, compare looks, climb ELO rankings, and see who gets mogged. Omogle is the internet\'s real-time competitive face arena — AI-judged, stranger-matched, brutally honest.',
+    'Join live face battles, compare looks, climb ELO rankings, and see who gets mogged. Omogl is the internet\'s real-time competitive face arena — AI-judged, stranger-matched, brutally honest.',
   alternates: {
-    canonical: 'https://omogle.vercel.app',
+    canonical: 'https://omogl.com',
   },
 };
 
@@ -26,10 +26,10 @@ const faqSchema = {
     },
     {
       '@type': 'Question',
-      name: 'What is Omogle?',
+      name: 'What is Omogl?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Omogle is a real-time competitive face battle platform. You get matched with a random stranger via webcam, an AI analyzes both faces simultaneously during a 10-second countdown, and the server reveals who scored higher — who mogged and who got mogged. Your result updates your ELO ranking on the global leaderboard.',
+        text: 'Omogl is a real-time competitive face battle platform. You get matched with a random stranger via webcam, an AI analyzes both faces simultaneously during a 10-second countdown, and the server reveals who scored higher — who mogged and who got mogged. Your result updates your ELO ranking on the global leaderboard.',
       },
     },
     {
@@ -37,7 +37,7 @@ const faqSchema = {
       name: 'What is a face battle?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'A face battle is a head-to-head comparison of two people\'s faces scored by AI. On Omogle, both users go live on webcam and the AI measures facial symmetry, jawline sharpness, canthal tilt (hunter eyes), eye spacing, and facial thirds harmony. The higher scorer wins the battle and gains ELO points.',
+        text: 'A face battle is a head-to-head comparison of two people\'s faces scored by AI. On Omogl, both users go live on webcam and the AI measures facial symmetry, jawline sharpness, canthal tilt (hunter eyes), eye spacing, and facial thirds harmony. The higher scorer wins the battle and gains ELO points.',
       },
     },
     {
@@ -45,7 +45,7 @@ const faqSchema = {
       name: 'What are hunter eyes?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Hunter eyes refer to a positive canthal tilt — where the outer corners of the eyes are higher than the inner corners, giving an intense, focused appearance. In looksmaxxing culture, hunter eyes are considered a high-status facial feature associated with attractiveness and dominance. Prey eyes (negative canthal tilt) are the opposite. Omogle\'s AI detects and scores your canthal tilt in real time.',
+        text: 'Hunter eyes refer to a positive canthal tilt — where the outer corners of the eyes are higher than the inner corners, giving an intense, focused appearance. In looksmaxxing culture, hunter eyes are considered a high-status facial feature associated with attractiveness and dominance. Prey eyes (negative canthal tilt) are the opposite. Omogl\'s AI detects and scores your canthal tilt in real time.',
       },
     },
     {
@@ -61,7 +61,7 @@ const faqSchema = {
       name: 'Can I battle my friends?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Yes. Omogle has a private room system for friend battles. One person generates a 6-character code, shares it with their friend, and the friend enters the code to start a direct battle. Same AI analysis and ELO system applies.',
+        text: 'Yes. Omogl has a private room system for friend battles. One person generates a 6-character code, shares it with their friend, and the friend enters the code to start a direct battle. Same AI analysis and ELO system applies.',
       },
     },
     {
@@ -69,7 +69,7 @@ const faqSchema = {
       name: 'What is looksmaxxing?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Looksmaxxing is the practice of maximizing your physical attractiveness through various means — skincare, fitness, haircuts, posture, diet, and sometimes medical procedures. The looksmaxxing community uses terms like mog, mogged, mogger, hunter eyes, jaw ratio, and canthal tilt to describe facial aesthetics. Omogle provides an AI-powered way to benchmark your looks in real competition.',
+        text: 'Looksmaxxing is the practice of maximizing your physical attractiveness through various means — skincare, fitness, haircuts, posture, diet, and sometimes medical procedures. The looksmaxxing community uses terms like mog, mogged, mogger, hunter eyes, jaw ratio, and canthal tilt to describe facial aesthetics. Omogl provides an AI-powered way to benchmark your looks in real competition.',
       },
     },
     {
@@ -77,7 +77,7 @@ const faqSchema = {
       name: 'How does the face scoring work?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Omogle uses MediaPipe FaceMesh to detect 468 facial landmarks in real time. The AI scores four dimensions: facial symmetry (nose and mouth alignment), canthal tilt (hunter eyes detection), jawline sharpness (jaw width to face height ratio), and facial thirds harmony (golden ratio proportions). Scores range from 4.0 to 9.8 for entertainment purposes. Results are not medical assessments.',
+        text: 'Omogl uses MediaPipe FaceMesh to detect 468 facial landmarks in real time. The AI scores four dimensions: facial symmetry (nose and mouth alignment), canthal tilt (hunter eyes detection), jawline sharpness (jaw width to face height ratio), and facial thirds harmony (golden ratio proportions). Scores range from 4.0 to 9.8 for entertainment purposes. Results are not medical assessments.',
       },
     },
     {
@@ -85,7 +85,7 @@ const faqSchema = {
       name: 'What does a mogger mean?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'A mogger is someone who consistently mogs others — a person whose looks, presence, or overall appearance dominates the people around them. On Omogle\'s leaderboard, high-ELO players who win most of their battles are considered moggers. Reaching GIGACHAD or CHAD rank on the leaderboard marks you as a top mogger.',
+        text: 'A mogger is someone who consistently mogs others — a person whose looks, presence, or overall appearance dominates the people around them. On Omogl\'s leaderboard, high-ELO players who win most of their battles are considered moggers. Reaching GIGACHAD or CHAD rank on the leaderboard marks you as a top mogger.',
       },
     },
   ],
@@ -107,7 +107,7 @@ export default function HomePage() {
       {/* ── TOP LOGO ── */}
       <div style={{ marginBottom: 16, zIndex: 100, display: 'flex', justifyContent: 'center' }}>
         <a href="/">
-          <img src="/logo-omogle.png" alt="Omogle Logo" style={{ height: 80, objectFit: 'contain' }} />
+          <img src="/logo-omogl.png" alt="Omogl Logo" style={{ height: 80, objectFit: 'contain' }} />
         </a>
       </div>
 
@@ -127,7 +127,7 @@ export default function HomePage() {
           zIndex: 1,
           marginTop: 32,
         }}
-        aria-label="About Omogle"
+        aria-label="About Omogl"
       >
         <h1
           style={{
@@ -142,7 +142,7 @@ export default function HomePage() {
             backgroundClip: 'text',
           }}
         >
-          Omogle — The Internet&apos;s Face Arena
+          Omogl — The Internet&apos;s Face Arena
         </h1>
         <h2
           style={{
@@ -165,7 +165,7 @@ export default function HomePage() {
           marginBottom: 20,
         }}>
           <p style={{ color: '#64748b', lineHeight: 1.75, fontSize: 15 }}>
-            <strong style={{ color: '#f8fafc' }}>Omogle</strong> is a live competitive face battle
+            <strong style={{ color: '#f8fafc' }}>Omogl</strong> is a live competitive face battle
             platform where you face strangers or friends in real-time webcam matches. Our AI analyzes
             both faces simultaneously — measuring <strong style={{ color: '#00f5d4' }}>facial symmetry</strong>,{' '}
             <strong style={{ color: '#00f5d4' }}>canthal tilt (hunter eyes)</strong>,{' '}
@@ -302,15 +302,15 @@ export default function HomePage() {
             },
             {
               q: 'What are hunter eyes?',
-              a: 'Hunter eyes (positive canthal tilt) means the outer corners of your eyes sit higher than the inner corners — giving an intense, predatory look. The opposite is negative canthal tilt (prey eyes). Omogle detects and scores your canthal tilt in real time.',
+              a: 'Hunter eyes (positive canthal tilt) means the outer corners of your eyes sit higher than the inner corners — giving an intense, predatory look. The opposite is negative canthal tilt (prey eyes). Omogl detects and scores your canthal tilt in real time.',
             },
             {
               q: 'What is looksmaxxing?',
-              a: 'Looksmaxxing is the practice of maximizing your physical attractiveness through skincare, fitness, grooming, and lifestyle changes. The looksmaxxing community coined terms like mogged, mogger, hunter eyes, and jaw ratio. Omogle lets you benchmark your looks in real competition.',
+              a: 'Looksmaxxing is the practice of maximizing your physical attractiveness through skincare, fitness, grooming, and lifestyle changes. The looksmaxxing community coined terms like mogged, mogger, hunter eyes, and jaw ratio. Omogl lets you benchmark your looks in real competition.',
             },
             {
               q: 'What does a mogger mean?',
-              a: 'A mogger is someone who consistently dominates others in looks comparisons. On Omogle\'s leaderboard, high-ELO players who win most battles are the moggers. Reaching CHAD or GIGACHAD rank makes you a certified mogger.',
+              a: 'A mogger is someone who consistently dominates others in looks comparisons. On Omogl\'s leaderboard, high-ELO players who win most battles are the moggers. Reaching CHAD or GIGACHAD rank makes you a certified mogger.',
             },
             {
               q: 'How does the ranking system work?',
@@ -321,8 +321,8 @@ export default function HomePage() {
               a: 'Yes. Use the "Challenge a Friend" button on the homepage to generate a private 6-character room code. Share it with your friend and they can join directly for a private battle.',
             },
             {
-              q: 'How does Omogle score faces?',
-              a: 'Omogle uses MediaPipe FaceMesh (468 landmarks) to measure facial symmetry, canthal tilt, jawline ratio, and facial thirds harmony. Scores range 4.0–9.8. This is for entertainment purposes only and is not a medical or clinical assessment.',
+              q: 'How does Omogl score faces?',
+              a: 'Omogl uses MediaPipe FaceMesh (468 landmarks) to measure facial symmetry, canthal tilt, jawline ratio, and facial thirds harmony. Scores range 4.0–9.8. This is for entertainment purposes only and is not a medical or clinical assessment.',
             },
           ].map(({ q, a }) => (
             <details

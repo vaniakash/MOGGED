@@ -4,17 +4,17 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'What Does Mogged Mean? | Face Battle Arena — Omogle',
+  title: 'What Does Mogged Mean? | Face Battle Arena — Omogl',
   description:
-    'Mogged means to be physically dominated in looks by another person. Discover the meaning of mogged, mogging, and mogger culture — and test yourself in a live AI face battle on Omogle.',
+    'Mogged means to be physically dominated in looks by another person. Discover the meaning of mogged, mogging, and mogger culture — and test yourself in a live AI face battle on Omogl.',
   alternates: {
-    canonical: 'https://omogle.vercel.app/mogged',
+    canonical: 'https://omogl.com/mogged',
   },
   openGraph: {
-    title: 'What Does Mogged Mean? | Face Battle Arena — Omogle',
+    title: 'What Does Mogged Mean? | Face Battle Arena — Omogl',
     description:
       'Mogged means to be physically dominated in looks by another person. Test yourself in a live AI face battle.',
-    url: 'https://omogle.vercel.app/mogged',
+    url: 'https://omogl.com/mogged',
   },
 };
 
@@ -43,7 +43,7 @@ const faqSchema = {
       name: 'What is a mogger?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'A mogger is someone who consistently out-competes others in looks, height, or physical presence. A mogger walks into a room and everyone looks lesser by comparison. On Omogle, high-ELO players who win most face battles are considered moggers.',
+        text: 'A mogger is someone who consistently out-competes others in looks, height, or physical presence. A mogger walks into a room and everyone looks lesser by comparison. On Omogl, high-ELO players who win most face battles are considered moggers.',
       },
     },
     {
@@ -59,7 +59,7 @@ const faqSchema = {
       name: 'How do I know if I got mogged?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'On Omogle, you find out immediately. You go live on webcam against a random stranger, the AI analyzes both faces for 10 seconds — measuring symmetry, canthal tilt (hunter eyes), jawline sharpness, and facial harmony — and the server reveals who scored higher. The loser got mogged. The winner mogged.',
+        text: 'On Omogl, you find out immediately. You go live on webcam against a random stranger, the AI analyzes both faces for 10 seconds — measuring symmetry, canthal tilt (hunter eyes), jawline sharpness, and facial harmony — and the server reveals who scored higher. The loser got mogged. The winner mogged.',
       },
     },
   ],
@@ -80,7 +80,7 @@ export default function MoggedPage() {
       {/* Nav */}
       <nav className="nav">
         <a href="/" className="nav-logo" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <img src="/logo-omogle.png" alt="Omogle" style={{ height: 56, objectFit: 'contain' }} />
+          <img src="/logo-omogl.png" alt="Omogl" style={{ height: 56, objectFit: 'contain' }} />
         </a>
         <div className="nav-actions">
           <a href="/leaderboard" className="btn btn-ghost btn-sm">Leaderboard</a>
@@ -93,7 +93,7 @@ export default function MoggedPage() {
         {/* Breadcrumb */}
         <nav aria-label="Breadcrumb" style={{ marginBottom: 24 }}>
           <ol style={{ display: 'flex', gap: 8, listStyle: 'none', fontSize: 12, color: '#475569' }}>
-            <li><a href="/" style={{ color: '#a855f7' }}>Omogle</a></li>
+            <li><a href="/" style={{ color: '#a855f7' }}>Omogl</a></li>
             <li style={{ color: '#475569' }}>/</li>
             <li style={{ color: '#94a3b8' }}>Mogged</li>
           </ol>
@@ -167,7 +167,7 @@ export default function MoggedPage() {
               {
                 term: 'Mogger',
                 color: '#00f5d4',
-                def: 'Someone who consistently dominates others in looks. High ELO on Omogle = certified mogger.',
+                def: 'Someone who consistently dominates others in looks. High ELO on Omogl = certified mogger.',
               },
               {
                 term: 'Mogging',
@@ -245,9 +245,9 @@ export default function MoggedPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {[
               { q: 'Where did mogged come from?', a: 'From "AMOG" (Alpha Male Of the Group) in pick-up artist forums, which evolved in looksmaxxing communities on Reddit before spreading to TikTok and mainstream internet culture.' },
-              { q: 'Is mogging just about looks?', a: 'Originally yes, but the term has expanded. You can mog someone in height, wealth, status, charisma, or skill. In Omogle, mogging is specifically about AI-scored facial features.' },
-              { q: 'What does it mean to be a mogger?', a: 'A mogger consistently wins face-to-face comparisons. On Omogle, reaching CHAD or GIGACHAD rank makes you an official mogger.' },
-              { q: 'Can I test if I get mogged?', a: 'Yes — go to Omogle\'s battle arena, get matched with a random stranger, and find out in real time who mogs who. The AI doesn\'t lie.' },
+              { q: 'Is mogging just about looks?', a: 'Originally yes, but the term has expanded. You can mog someone in height, wealth, status, charisma, or skill. In Omogl, mogging is specifically about AI-scored facial features.' },
+              { q: 'What does it mean to be a mogger?', a: 'A mogger consistently wins face-to-face comparisons. On Omogl, reaching CHAD or GIGACHAD rank makes you an official mogger.' },
+              { q: 'Can I test if I get mogged?', a: 'Yes — go to Omogl\'s battle arena, get matched with a random stranger, and find out in real time who mogs who. The AI doesn\'t lie.' },
             ].map(({ q, a }) => (
               <details
                 key={q}
@@ -303,7 +303,7 @@ export default function MoggedPage() {
         {/* Internal linking */}
         <div style={{ marginTop: 40, display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
           {[
-            { label: '🏠 Omogle Home', href: '/' },
+            { label: '🏠 Omogl Home', href: '/' },
             { label: '🦅 Hunter Eyes Test', href: '/hunter-eyes-test' },
             { label: '📈 Looksmaxxing Guide', href: '/looksmax' },
             { label: '🏆 Leaderboard', href: '/leaderboard' },

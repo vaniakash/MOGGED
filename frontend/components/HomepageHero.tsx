@@ -104,7 +104,7 @@ export default function HomepageHero() {
             marginBottom: 24,
           }}
         >
-          Omogle 1v1 Face Arena · Real-Time AI Face Scanning · 468 Landmarks
+          Omogl 1v1 Face Arena · Real-Time AI Face Scanning · 468 Landmarks
         </motion.p>
 
         {/* ── BATTLE CARD ─────────────────────────────────────── */}

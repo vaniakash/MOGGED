@@ -35,10 +35,10 @@ export default function ChatPageClient() {
     socket.connect();
 
     // Register a persistent session id in localStorage or just use uuid
-    let sid = localStorage.getItem('omogle_chat_sid');
+    let sid = localStorage.getItem('omogl_chat_sid');
     if (!sid) {
       sid = uuidv4();
-      localStorage.setItem('omogle_chat_sid', sid);
+      localStorage.setItem('omogl_chat_sid', sid);
     }
 
     const onConnect = () => {
@@ -120,7 +120,7 @@ export default function ChatPageClient() {
         zIndex: 10,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <img src="/logo-omogle.png" alt="Omogle" style={{ height: 32, objectFit: 'contain' }} />
+          <img src="/logo-omogl.png" alt="Omogl" style={{ height: 32, objectFit: 'contain' }} />
           <span style={{
             fontSize: 14,
             fontWeight: 600,

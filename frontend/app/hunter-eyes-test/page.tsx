@@ -3,17 +3,17 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Hunter Eyes Test — Canthal Tilt Checker | Omogle',
+  title: 'Hunter Eyes Test — Canthal Tilt Checker | Omogl',
   description:
-    'Do you have hunter eyes? Learn what hunter eyes (positive canthal tilt) are, how to test your canthal tilt, and battle live to see how your eyes score against real people on Omogle.',
+    'Do you have hunter eyes? Learn what hunter eyes (positive canthal tilt) are, how to test your canthal tilt, and battle live to see how your eyes score against real people on Omogl.',
   alternates: {
-    canonical: 'https://omogle.vercel.app/hunter-eyes-test',
+    canonical: 'https://omogl.com/hunter-eyes-test',
   },
   openGraph: {
-    title: 'Hunter Eyes Test — Canthal Tilt Checker | Omogle',
+    title: 'Hunter Eyes Test — Canthal Tilt Checker | Omogl',
     description:
-      'Do you have hunter eyes? Test your canthal tilt in a live AI face battle on Omogle.',
-    url: 'https://omogle.vercel.app/hunter-eyes-test',
+      'Do you have hunter eyes? Test your canthal tilt in a live AI face battle on Omogl.',
+    url: 'https://omogl.com/hunter-eyes-test',
   },
 };
 
@@ -50,7 +50,7 @@ const faqSchema = {
       name: 'How can I test my canthal tilt?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'You can test your canthal tilt on Omogle\'s face battle arena. Our AI uses MediaPipe FaceMesh to detect the angle of your outer and inner eye corners in real time during a live webcam battle. You\'ll receive a canthal tilt score and a hunter eyes or negative canthal tilt label as part of your face analysis result.',
+        text: 'You can test your canthal tilt on Omogl\'s face battle arena. Our AI uses MediaPipe FaceMesh to detect the angle of your outer and inner eye corners in real time during a live webcam battle. You\'ll receive a canthal tilt score and a hunter eyes or negative canthal tilt label as part of your face analysis result.',
       },
     },
     {
@@ -66,7 +66,7 @@ const faqSchema = {
       name: 'Do hunter eyes affect attractiveness?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Research suggests that eye shape and expression significantly affect perceived attractiveness and dominance. Positive canthal tilt is associated with an intense, confident appearance that many people find attractive. Omogle\'s AI weights canthal tilt as 30% of the total eye score, alongside eye spacing and openness.',
+        text: 'Research suggests that eye shape and expression significantly affect perceived attractiveness and dominance. Positive canthal tilt is associated with an intense, confident appearance that many people find attractive. Omogl\'s AI weights canthal tilt as 30% of the total eye score, alongside eye spacing and openness.',
       },
     },
   ],
@@ -84,7 +84,7 @@ export default function HunterEyesTestPage() {
       {/* Nav */}
       <nav className="nav">
         <a href="/" className="nav-logo" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <img src="/logo-omogle.png" alt="Omogle" style={{ height: 56, objectFit: 'contain' }} />
+          <img src="/logo-omogl.png" alt="Omogl" style={{ height: 56, objectFit: 'contain' }} />
         </a>
         <div className="nav-actions">
           <a href="/leaderboard" className="btn btn-ghost btn-sm">Leaderboard</a>
@@ -97,7 +97,7 @@ export default function HunterEyesTestPage() {
         {/* Breadcrumb */}
         <nav aria-label="Breadcrumb" style={{ marginBottom: 24 }}>
           <ol style={{ display: 'flex', gap: 8, listStyle: 'none', fontSize: 12, color: '#475569' }}>
-            <li><a href="/" style={{ color: '#a855f7' }}>Omogle</a></li>
+            <li><a href="/" style={{ color: '#a855f7' }}>Omogl</a></li>
             <li style={{ color: '#475569' }}>/</li>
             <li style={{ color: '#94a3b8' }}>Hunter Eyes Test</li>
           </ol>
@@ -214,10 +214,10 @@ export default function HunterEyesTestPage() {
           </div>
         </section>
 
-        {/* How Omogle tests it */}
+        {/* How Omogl tests it */}
         <section className="card" style={{ padding: '32px 28px', borderRadius: 20, marginBottom: 48 }}>
           <h2 className="font-display" style={{ fontSize: 26, marginBottom: 20, color: '#fbbf24' }}>
-            How Omogle Measures Your Canthal Tilt
+            How Omogl Measures Your Canthal Tilt
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {[
@@ -274,9 +274,9 @@ export default function HunterEyesTestPage() {
             {[
               { q: 'What is positive canthal tilt?', a: 'Positive canthal tilt means the outer corners of your eyes are positioned higher than the inner corners. This creates the "hunter eyes" appearance — intense, focused, and dominant-looking.' },
               { q: 'Are hunter eyes genetic?', a: 'Yes, canthal tilt is primarily determined by your bone structure and orbital anatomy — both genetic. While makeup can visually simulate positive canthal tilt, actual structural canthal tilt cannot be changed without surgical procedures like canthoplasty.' },
-              { q: 'Do hunter eyes actually matter for attractiveness?', a: 'In looksmaxxing research and cultural preference studies, positive canthal tilt is consistently associated with perceived attractiveness and dominance. Omogle\'s AI scores it as a significant component of the eye score. That said, it\'s one of many factors — jaw, symmetry, and harmony all matter too.' },
+              { q: 'Do hunter eyes actually matter for attractiveness?', a: 'In looksmaxxing research and cultural preference studies, positive canthal tilt is consistently associated with perceived attractiveness and dominance. Omogl\'s AI scores it as a significant component of the eye score. That said, it\'s one of many factors — jaw, symmetry, and harmony all matter too.' },
               { q: 'Can I fake hunter eyes?', a: 'Makeup artists use upward-flicked eyeliner to simulate positive canthal tilt. Mewing and facial exercises will not change canthal tilt since it\'s orbital bone structure, not soft tissue.' },
-              { q: 'What other features does Omogle analyze?', a: 'Beyond canthal tilt, Omogle measures facial symmetry (nose and mouth alignment), jawline sharpness (jaw-to-face-height ratio), eye spacing (inner-to-outer ratio), and facial thirds harmony. Each dimension contributes to your total face score.' },
+              { q: 'What other features does Omogl analyze?', a: 'Beyond canthal tilt, Omogl measures facial symmetry (nose and mouth alignment), jawline sharpness (jaw-to-face-height ratio), eye spacing (inner-to-outer ratio), and facial thirds harmony. Each dimension contributes to your total face score.' },
             ].map(({ q, a }) => (
               <details
                 key={q}
@@ -333,7 +333,7 @@ export default function HunterEyesTestPage() {
         {/* Internal linking */}
         <div style={{ marginTop: 40, display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
           {[
-            { label: '🏠 Omogle Home', href: '/' },
+            { label: '🏠 Omogl Home', href: '/' },
             { label: '💀 Mogged Meaning', href: '/mogged' },
             { label: '📈 Looksmaxxing', href: '/looksmax' },
             { label: '🏆 Leaderboard', href: '/leaderboard' },
