@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   creator: 'Omogl',
   publisher: 'Omogl',
   alternates: {
-    canonical: 'https://omogl.com',
+    canonical: 'https://omogl.com/',
   },
   robots: {
     index: true,
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Omogl — Face Battle Arena | Get Mogged Online',
     description: 'Join live face battles, compare looks, climb ELO rankings, and see who gets mogged. The internet\'s real-time competitive face arena.',
-    url: 'https://omogl.com',
+    url: 'https://omogl.com/',
     siteName: 'Omogl',
     locale: 'en_US',
     type: 'website',
@@ -75,7 +75,7 @@ const webAppSchema = {
   '@context': 'https://schema.org',
   '@type': 'WebApplication',
   name: 'Omogl',
-  url: 'https://omogl.com',
+  url: 'https://omogl.com/',
   description: 'Real-time competitive face battle platform. Get matched with strangers, have your face analyzed by AI, and see who gets mogged. ELO-ranked matchmaking with hunter eyes detection, facial symmetry scoring, and live result reveals.',
   applicationCategory: 'EntertainmentApplication',
   operatingSystem: 'Web Browser',
@@ -99,7 +99,7 @@ const organizationSchema = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
   name: 'Omogl',
-  url: 'https://omogl.com',
+  url: 'https://omogl.com/',
   logo: 'https://omogl.com/logo-omogl.png',
   description: 'Omogl is the internet\'s real-time competitive face battle platform. Face off against strangers or friends, get AI-analyzed, and find out who gets mogged.',
   sameAs: [],
