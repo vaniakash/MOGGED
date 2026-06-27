@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
+import EromifyAd from '@/components/EromifyAd';
 import './globals.css';
 
 const GA_ID = 'G-8EJNTCLJ6D';
@@ -166,6 +167,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         {children}
+        <EromifyAd />
 
         {/* ── Google Analytics GA4 ──────────────────────────────────────── */}
         <Script
