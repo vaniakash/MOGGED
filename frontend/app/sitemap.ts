@@ -9,19 +9,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: baseUrl,
       lastModified: now,
       changeFrequency: 'always',
-      priority: 1,
+      priority: 1.0,
     },
     {
       url: `${baseUrl}/battle`,
       lastModified: now,
       changeFrequency: 'always',
-      priority: 0.9,
+      priority: 0.95,
     },
     {
       url: `${baseUrl}/leaderboard`,
       lastModified: now,
       changeFrequency: 'hourly',
-      priority: 0.8,
+      priority: 0.85,
     },
     {
       url: `${baseUrl}/mogged`,
@@ -30,16 +30,22 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.85,
     },
     {
-      url: `${baseUrl}/hunter-eyes-test`,
+      url: `${baseUrl}/looksmax`,
       lastModified: now,
       changeFrequency: 'weekly',
       priority: 0.82,
     },
     {
-      url: `${baseUrl}/looksmax`,
+      url: `${baseUrl}/hunter-eyes-test`,
       lastModified: now,
       changeFrequency: 'weekly',
       priority: 0.80,
+    },
+    {
+      url: `${baseUrl}/chat`,
+      lastModified: now,
+      changeFrequency: 'always',
+      priority: 0.75,
     },
   ];
 }
