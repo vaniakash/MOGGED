@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/logo-omogl.png',
+        url: '/android-chrome-512x512.png',
         width: 1200,
         height: 630,
         alt: 'Omogl — The Internet\'s Face Arena',
@@ -58,13 +58,21 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Omogl — Face Battle Arena | Get Mogged Online',
     description: 'Join live face battles, compare looks, climb ELO rankings, and see who gets mogged.',
-    images: ['/logo-omogl.png'],
+    images: ['/android-chrome-512x512.png'],
   },
   icons: {
-    icon: '/omogl-logo.svg',
-    shortcut: '/omogl-logo.svg',
-    apple: '/omogl-logo.svg',
+    icon: [
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon.ico', sizes: 'any' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
+    other: [
+      { rel: 'apple-touch-icon', url: '/apple-touch-icon.png' },
+    ],
   },
+  manifest: '/site.webmanifest',
   verification: {
     google: '1wtS_iaxJD4SYCzjM1eNG3mV-xsjGPkLWcjYXpYVwbg',
   },
@@ -100,7 +108,7 @@ const organizationSchema = {
   '@type': 'Organization',
   name: 'Omogl',
   url: 'https://omogl.com/',
-  logo: 'https://omogl.com/logo-omogl.png',
+  logo: 'https://omogl.com/android-chrome-512x512.png',
   description: 'Omogl is the internet\'s real-time competitive face battle platform. Face off against strangers or friends, get AI-analyzed, and find out who gets mogged.',
   sameAs: [],
 };

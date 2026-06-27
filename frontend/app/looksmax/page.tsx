@@ -76,7 +76,7 @@ export default function LooksmaxPage() {
       {/* Nav */}
       <nav className="nav">
         <a href="/" className="nav-logo" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <img src="/logo-omogl.png" alt="Omogl" style={{ height: 56, objectFit: 'contain' }} />
+          <img src="/logo.png" alt="Omogl" style={{ height: 56, objectFit: 'contain' }} />
         </a>
         <div className="nav-actions">
           <a href="/leaderboard" className="btn btn-ghost btn-sm">Leaderboard</a>

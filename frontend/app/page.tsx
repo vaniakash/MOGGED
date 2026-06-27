@@ -107,7 +107,7 @@ export default function HomePage() {
       {/* ── TOP LOGO ── */}
       <div style={{ marginBottom: 16, zIndex: 100, display: 'flex', justifyContent: 'center' }}>
         <a href="/">
-          <img src="/logo-omogl.png" alt="Omogl Logo" style={{ height: 80, objectFit: 'contain' }} />
+          <img src="/logo.png" alt="Omogl Logo" style={{ height: 80, objectFit: 'contain' }} />
         </a>
       </div>
 

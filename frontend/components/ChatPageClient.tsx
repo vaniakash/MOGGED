@@ -120,7 +120,7 @@ export default function ChatPageClient() {
         zIndex: 10,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <img src="/logo-omogl.png" alt="Omogl" style={{ height: 32, objectFit: 'contain' }} />
+          <img src="/logo.png" alt="Omogl" style={{ height: 32, objectFit: 'contain' }} />
           <span style={{
             fontSize: 14,
             fontWeight: 600,
