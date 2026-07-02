@@ -111,6 +111,36 @@ export default function HomePage() {
         </a>
       </div>
 
+      {/* ── FOR SALE BANNER ── */}
+      <div style={{ 
+        width: 'calc(100% - 32px)', 
+        maxWidth: 900,
+        background: 'linear-gradient(90deg, #ff2d78, #a855f7)', 
+        color: 'white', 
+        padding: '16px', 
+        textAlign: 'center', 
+        fontWeight: 'bold', 
+        fontSize: '16px', 
+        borderRadius: '12px',
+        marginBottom: '32px',
+        zIndex: 100,
+        boxShadow: '0 4px 20px rgba(168,85,247,0.4)',
+        border: '2px solid rgba(255,255,255,0.4)'
+      }}>
+        🚀 I AM SELLING THIS PROJECT FOR 10,000 USD (Negotiable) 🚀 <br />
+        <span style={{ fontSize: '14px', fontWeight: 500, display: 'inline-block', marginTop: '8px' }}>
+          Mail me on:{' '}
+          <a href="mailto:akashrana49927@gmail.com" style={{ textDecoration: 'underline', color: '#f8fafc' }}>
+            akashrana49927@gmail.com
+          </a>
+          {' '} | {' '}
+          WhatsApp:{' '}
+          <a href="https://wa.me/917078143790" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'underline', color: '#f8fafc' }}>
+            +91 7078143790
+          </a>
+        </span>
+      </div>
+
       {/* ── INTERACTIVE HERO (client component) ── */}
       <HomepageHero />
 
