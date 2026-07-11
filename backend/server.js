@@ -6,6 +6,8 @@ const cors     = require('cors');
 const mongoose = require('mongoose');
 mongoose.set('bufferCommands', false);
 const { v4: uuidv4 } = require('uuid');
+const { OAuth2Client } = require('google-auth-library');
+const jwt = require('jsonwebtoken');
 const { calculateElo } = require('./utils/elo');
 const User  = require('./models/User');
 const Match = require('./models/Match');
@@ -13,14 +15,21 @@ const Match = require('./models/Match');
 const app    = express();
 const server = http.createServer(app);
 
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET || 'fallback_secret';
+const ADMIN_EMAIL      = process.env.ADMIN_EMAIL || 'akashrana49927@gmail.com';
+const ADMIN_PASSWORD   = process.env.ADMIN_PASSWORD || 'aku79020';
+const googleClient     = new OAuth2Client(GOOGLE_CLIENT_ID);
+
 // Dynamic CORS — accepts any Vercel preview/prod URL + localhost + ngrok
 function isAllowedOrigin(origin) {
   if (!origin) return true; // server-to-server
   if (origin === 'http://localhost:3000') return true;
   if (origin === 'http://10.202.98.220:3000') return true;
-  if (origin.endsWith('.vercel.app')) return true;       // all Vercel URLs
-  if (origin.includes('ngrok-free.app')) return true;   // ngrok dev tunnels
-  if (origin.includes('onrender.com')) return true;     // render previews
+  if (origin.endsWith('.vercel.app')) return true;
+  if (origin.includes('ngrok-free.app')) return true;
+  if (origin.includes('onrender.com')) return true;
+  if (origin.includes('omogl.com')) return true;
   if (process.env.CLIENT_URL && origin === process.env.CLIENT_URL) return true;
   return false;
 }
@@ -47,26 +56,241 @@ if (process.env.MONGODB_URI) {
   console.warn('⚠️  No MONGODB_URI – running without persistence');
 }
 
+// ── Admin JWT middleware ───────────────────────────────────────────────────
+function requireAdmin(req, res, next) {
+  const auth = req.headers.authorization;
+  if (!auth || !auth.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  try {
+    const payload = jwt.verify(auth.slice(7), ADMIN_JWT_SECRET);
+    if (!payload.admin) return res.status(403).json({ error: 'Forbidden' });
+    next();
+  } catch {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+}
+
 // ── In-memory state ────────────────────────────────────────────────────────
-const waitingQueue    = [];         // [{ socketId, sessionId }]
-const chatWaitingQueue = [];        // [{ socketId, sessionId }]
-const rooms           = new Map();  // roomId → RoomState
-const chatRooms       = new Map();  // roomId → { userA, userB }
-const socketToRoom    = new Map();  // socketId → roomId
-const socketToChatRoom = new Map(); // socketId → roomId
-const socketToSession = new Map();  // socketId → sessionId
-const roomTimers      = new Map();  // roomId → timer
-const privateRooms    = new Map();  // code → { socketId, sessionId }  (friend battle)
+const waitingQueue    = [];
+const chatWaitingQueue = [];
+const rooms           = new Map();
+const chatRooms       = new Map();
+const socketToRoom    = new Map();
+const socketToChatRoom = new Map();
+const socketToSession = new Map();
+const roomTimers      = new Map();
+const privateRooms    = new Map();
 
 const COUNTDOWN_SECS = 10;
 
 // ── REST ───────────────────────────────────────────────────────────────────
 app.get('/health', (_, res) => res.json({ status: 'ok', ts: Date.now() }));
 
+// ── Google OAuth — verify ID token and upsert user ─────────────────────────
+app.post('/api/auth/google', async (req, res) => {
+  const { idToken, sessionId: existingSessionId } = req.body;
+  if (!idToken) return res.status(400).json({ error: 'Missing idToken' });
+
+  try {
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const { sub: googleId, email, name: displayName, picture: photoURL } = payload;
+
+    // Check if this Google account already has a user
+    let user = await User.findOne({ googleId });
+
+    if (user) {
+      // Merge: if there's an existing anonymous session with history, carry it over
+      if (existingSessionId && existingSessionId !== user.sessionId) {
+        const anonUser = await User.findOne({ sessionId: existingSessionId });
+        if (anonUser && anonUser.matches > 0 && anonUser.provider === 'anonymous') {
+          // Merge ELO/stats from anon session
+          user.elo     = Math.max(user.elo, anonUser.elo);
+          user.matches += anonUser.matches;
+          user.wins    += anonUser.wins;
+          user.losses  += anonUser.losses;
+          await User.deleteOne({ sessionId: existingSessionId });
+        }
+      }
+      user.displayName = displayName;
+      user.photoURL    = photoURL;
+      user.lastSeen    = new Date();
+      await user.save();
+    } else {
+      // New Google user — try to inherit existing anonymous session
+      const sessionId = existingSessionId || uuidv4();
+      const anonUser  = await User.findOne({ sessionId });
+
+      if (anonUser && anonUser.provider === 'anonymous') {
+        // Upgrade anonymous user to Google account
+        anonUser.googleId    = googleId;
+        anonUser.email       = email;
+        anonUser.displayName = displayName;
+        anonUser.photoURL    = photoURL;
+        anonUser.provider    = 'google';
+        anonUser.lastSeen    = new Date();
+        await anonUser.save();
+        user = anonUser;
+      } else {
+        // Completely new user
+        const newSessionId = uuidv4();
+        user = await User.create({
+          sessionId: newSessionId,
+          googleId, email, displayName, photoURL,
+          provider: 'google',
+        });
+      }
+    }
+
+    return res.json({
+      sessionId:   user.sessionId,
+      user: {
+        googleId:    user.googleId,
+        email:       user.email,
+        displayName: user.displayName,
+        photoURL:    user.photoURL,
+        elo:         user.elo,
+        wins:        user.wins,
+        losses:      user.losses,
+        matches:     user.matches,
+      },
+    });
+  } catch (err) {
+    console.error('Google auth error:', err.message);
+    return res.status(401).json({ error: 'Invalid Google token' });
+  }
+});
+
+// ── Profile Completion ────────────────────────────────────────────────────
+app.put('/api/profile', async (req, res) => {
+  const { sessionId, username, nationality, age, gender } = req.body;
+  if (!sessionId) return res.status(400).json({ error: 'Missing sessionId' });
+
+  try {
+    const user = await User.findOneAndUpdate(
+      { sessionId },
+      {
+        $set: {
+          username:        (username || '').trim().slice(0, 32),
+          nationality:     (nationality || '').trim().slice(0, 60),
+          age:             age ? Math.max(13, Math.min(120, parseInt(age))) : null,
+          gender:          gender || null,
+          profileComplete: true,
+          lastSeen:        new Date(),
+        },
+      },
+      { new: true }
+    ).select('sessionId username nationality age gender profileComplete elo wins losses displayName photoURL');
+
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    return res.json({ user });
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
+  }
+});
+
+// ── Solo Tools (Pollinations AI) ───────────────────────────────────────────
+const faceScoreRoute     = require('./routes/faceScore').router;
+const celebrityMatchRoute = require('./routes/celebrityMatch');
+const asyncDuelRoute      = require('./routes/asyncDuel');
+const glowUpRoute         = require('./routes/glowUp');
+const streakRoute         = require('./routes/streak');
+const { startCron }       = require('./cron/dailyReset');
+
+app.use('/api/face-score', faceScoreRoute);
+app.use('/api/celebrity-match', celebrityMatchRoute);
+app.use('/api/duel/async', asyncDuelRoute);
+app.use('/api/glow-up', glowUpRoute);
+app.use('/api/streak', streakRoute);
+
+// Start cron for daily streak resets
+startCron();
+
+// ── Admin Login ───────────────────────────────────────────────────────────
+app.post('/api/admin/login', (req, res) => {
+  const { email, password } = req.body;
+  if (email !== ADMIN_EMAIL || password !== ADMIN_PASSWORD) {
+    return res.status(401).json({ error: 'Invalid credentials' });
+  }
+  const token = jwt.sign({ admin: true, email }, ADMIN_JWT_SECRET, { expiresIn: '24h' });
+  return res.json({ token });
+});
+
+// ── Admin Stats ────────────────────────────────────────────────────────────
+app.get('/api/admin/stats', requireAdmin, async (_, res) => {
+  try {
+    const [totalUsers, totalMatches, googleUsers] = await Promise.all([
+      User.countDocuments(),
+      Match.countDocuments(),
+      User.countDocuments({ provider: 'google' }),
+    ]);
+    const activeQueue    = waitingQueue.length;
+    const activeBattles  = rooms.size;
+    const activeChat     = chatRooms.size;
+    res.json({ totalUsers, totalMatches, googleUsers, activeQueue, activeBattles, activeChat });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── Admin Users List ───────────────────────────────────────────────────────
+app.get('/api/admin/users', requireAdmin, async (req, res) => {
+  try {
+    const page  = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, parseInt(req.query.limit) || 25);
+    const skip  = (page - 1) * limit;
+    const sort  = req.query.sort || '-createdAt'; // default newest first
+
+    const [users, total] = await Promise.all([
+      User.find()
+        .sort(sort)
+        .skip(skip)
+        .limit(limit)
+        .select('sessionId displayName email provider elo wins losses matches createdAt lastSeen photoURL username nationality age gender profileComplete'),
+      User.countDocuments(),
+    ]);
+
+    res.json({ users, total, page, pages: Math.ceil(total / limit) });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── Admin Matches List ─────────────────────────────────────────────────────
+app.get('/api/admin/matches', requireAdmin, async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 100;
+    const matches = await Match.find().sort('-createdAt').limit(limit).lean();
+    res.json({ matches });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Admin Tools endpoint
+const FaceScore = require('./models/FaceScore');
+const Credit    = require('./models/Credit');
+app.get('/api/admin/tools', requireAdmin, async (req, res) => {
+  try {
+    const [faceScores, credits] = await Promise.all([
+      FaceScore.find().sort('-createdAt').limit(50).lean(),
+      Credit.find().sort('-updatedAt').limit(50).lean(),
+    ]);
+    res.json({ faceScores, credits });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Leaderboard ────────────────────────────────────────────────────────────
 app.get('/api/leaderboard', async (_, res) => {
   try {
     const leaders = await User.find().sort({ elo: -1 }).limit(20)
-      .select('sessionId username elo wins losses matches');
+      .select('sessionId username displayName photoURL elo wins losses matches provider');
     res.json(leaders);
   } catch { res.json([]); }
 });
@@ -104,10 +328,10 @@ function createRoom(userA, userB) {
     userB:     { socketId: userB.socketId, sessionId: userB.sessionId },
     scoreA:    null,
     scoreB:    null,
-    readyA:    false,   // WebRTC peer connected on A's side
-    readyB:    false,   // WebRTC peer connected on B's side
-    countdown: false,   // has countdown started?
-    startTime: null,    // server timestamp when countdown fired
+    readyA:    false,
+    readyB:    false,
+    countdown: false,
+    startTime: null,
   });
   socketToRoom.set(userA.socketId, roomId);
   socketToRoom.set(userB.socketId, roomId);
@@ -159,31 +383,26 @@ function tryChatMatch() {
 }
 
 // ── SERVER-SYNCED COUNTDOWN ────────────────────────────────────────────────
-// Called when both peers signal their WebRTC stream is live
 function startCountdown(roomId) {
   const room = rooms.get(roomId);
-  if (!room || room.countdown) return;  // already started
+  if (!room || room.countdown) return;
   room.countdown = true;
   room.startTime = Date.now();
 
   console.log(`⏱  Countdown started for room ${roomId}`);
 
-  // Emit to BOTH clients simultaneously with the exact server timestamp
   io.to(roomId).emit('countdown_start', {
     serverTime:    room.startTime,
     durationMs:    COUNTDOWN_SECS * 1000,
   });
 
-  // Server-side: after COUNTDOWN_SECS, force score collection regardless
   const t = setTimeout(async () => {
     const r = rooms.get(roomId);
     if (!r) return;
 
-    // Tell clients to submit NOW (they should have submitted already, but this is the hard deadline)
     io.to(roomId).emit('submit_now');
     console.log(`📢 submit_now sent to room ${roomId}`);
 
-    // Give clients 3 extra seconds to submit, then force result with whatever we have
     const forceTimer = setTimeout(async () => {
       const r2 = rooms.get(roomId);
       if (!r2 || (r2.scoreA && r2.scoreB)) return;
@@ -202,7 +421,6 @@ async function resolveMatch(roomId) {
   const room = rooms.get(roomId);
   if (!room) return;
 
-  // If one score is missing, give them a fallback score
   if (!room.scoreA) room.scoreA = { score: { total: 5.0, symmetry: 0.5, jawScore: 0.5, eyeScore: 0.5, harmony: 0.5 }, traits: ['🤷 No Score'] };
   if (!room.scoreB) room.scoreB = { score: { total: 5.0, symmetry: 0.5, jawScore: 0.5, eyeScore: 0.5, harmony: 0.5 }, traits: ['🤷 No Score'] };
 
@@ -219,11 +437,11 @@ async function resolveMatch(roomId) {
       eloResult  = elo;
       await User.updateOne({ sessionId: room.userA.sessionId }, {
         $inc: { matches: 1, wins: winner === 'A' ? 1 : 0, losses: winner === 'B' ? 1 : 0 },
-        $set: { elo: elo.newRatingA },
+        $set: { elo: elo.newRatingA, lastSeen: new Date() },
       });
       await User.updateOne({ sessionId: room.userB.sessionId }, {
         $inc: { matches: 1, wins: winner === 'B' ? 1 : 0, losses: winner === 'A' ? 1 : 0 },
-        $set: { elo: elo.newRatingB },
+        $set: { elo: elo.newRatingB, lastSeen: new Date() },
       });
       await Match.create({
         userA: room.userA.sessionId, userB: room.userB.sessionId,
@@ -253,13 +471,11 @@ io.on('connection', (socket) => {
   console.log(`🔌 Connected: ${socket.id}`);
 
   // ── PRIVATE ROOM — Create ───────────────────────────────────────────────
-  // Friend generates a short code and waits; other friend joins with the code
   socket.on('create_private_room', ({ sessionId }) => {
-    // Remove any existing private room this socket created
     for (const [code, data] of privateRooms.entries()) {
       if (data.socketId === socket.id) privateRooms.delete(code);
     }
-    const code = Math.random().toString(36).slice(2, 8).toUpperCase(); // e.g. "A3F8X2"
+    const code = Math.random().toString(36).slice(2, 8).toUpperCase();
     const sid  = sessionId || socketToSession.get(socket.id) || uuidv4();
     socketToSession.set(socket.id, sid);
     privateRooms.set(code, { socketId: socket.id, sessionId: sid });
@@ -284,7 +500,6 @@ io.on('connection', (socket) => {
       socket.emit('private_room_error', { message: 'Room creator disconnected. Ask them to create a new room.' });
       return;
     }
-    // Match the two friends directly
     const sid = sessionId || socketToSession.get(socket.id) || uuidv4();
     socketToSession.set(socket.id, sid);
     privateRooms.delete(code.toUpperCase());
@@ -358,7 +573,6 @@ io.on('connection', (socket) => {
   });
 
   // ── PEER READY → triggers server countdown ────────────────────────────
-  // Client emits this when their WebRTC stream is live (remoteStream received)
   socket.on('peer_ready', ({ roomId }) => {
     const room = rooms.get(roomId);
     if (!room) return;
@@ -368,7 +582,6 @@ io.on('connection', (socket) => {
 
     console.log(`✅ peer_ready: ${socket.id} in room ${roomId} (A=${room.readyA} B=${room.readyB})`);
 
-    // When BOTH are ready → fire the synchronized countdown
     if (room.readyA && room.readyB) {
       startCountdown(roomId);
     }
@@ -385,7 +598,6 @@ io.on('connection', (socket) => {
     if (isA && !room.scoreA) { room.scoreA = { score, traits }; console.log(`📊 Score A: ${typeof score === 'object' ? score.total : score}`); }
     if (isB && !room.scoreB) { room.scoreB = { score, traits }; console.log(`📊 Score B: ${typeof score === 'object' ? score.total : score}`); }
 
-    // Both scores in → resolve immediately
     if (room.scoreA && room.scoreB) {
       await resolveMatch(roomId);
     }
@@ -417,7 +629,6 @@ io.on('connection', (socket) => {
   // ── Disconnect ─────────────────────────────────────────────────────────
   socket.on('disconnect', () => {
     console.log(`❌ Disconnected: ${socket.id}`);
-    // Clean up private room if this socket was a creator
     for (const [code, data] of privateRooms.entries()) {
       if (data.socketId === socket.id) { privateRooms.delete(code); break; }
     }
