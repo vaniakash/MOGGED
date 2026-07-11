@@ -637,15 +637,6 @@ export default function HomepageHero() {
                   onMouseOut={e => e.currentTarget.style.background = '#f8fafc'}
                 >
                   ⚔️ Enter The Arena
-                  {!user && (
-                    <span style={{
-                      position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
-                      fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 99,
-                      background: 'rgba(168,85,247,0.15)', color: '#a855f7',
-                    }}>
-                      Login required
-                    </span>
-                  )}
                 </button>
 
                 <button
