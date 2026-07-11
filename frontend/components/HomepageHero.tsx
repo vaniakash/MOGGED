@@ -791,18 +791,20 @@ export default function HomepageHero() {
                       Sign in to save battle history &amp; climb the leaderboard
                     </div>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-                    <div ref={btnRef} id="google-signin-hero-btn" />
-                    {!gsiReady && (
-                      <div style={{
-                        padding: '10px 20px', borderRadius: 99,
-                        background: 'rgba(255,255,255,0.05)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        color: '#64748b', fontSize: 13,
-                      }}>
-                        Loading…
-                      </div>
-                    )}
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    <a href="/login" style={{
+                      padding: '10px 22px', borderRadius: 99,
+                      background: 'linear-gradient(135deg, #a855f7, #7c3aed)',
+                      color: '#fff', fontWeight: 700, fontSize: 14,
+                      textDecoration: 'none', whiteSpace: 'nowrap',
+                    }}>Log In</a>
+                    <a href="/signup" style={{
+                      padding: '10px 22px', borderRadius: 99,
+                      background: 'transparent',
+                      border: '1px solid rgba(168,85,247,0.4)',
+                      color: '#a855f7', fontWeight: 700, fontSize: 14,
+                      textDecoration: 'none', whiteSpace: 'nowrap',
+                    }}>Create Account</a>
                   </div>
                 </div>
               </div>
