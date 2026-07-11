@@ -5,14 +5,16 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
 
 export interface AuthUser {
-  googleId: string;
+  googleId?: string;
   email: string;
   displayName: string;
-  photoURL: string;
+  photoURL?: string;
   elo: number;
   wins: number;
   losses: number;
   matches: number;
+  provider?: string;
+  emailVerified?: boolean;
 }
 
 interface AuthContextType {
@@ -54,15 +56,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Rehydrate from localStorage on mount
+  // Rehydrate from localStorage on mount + listen for changes from email login
   useEffect(() => {
-    const storedSession = localStorage.getItem('omogl_session');
-    const storedUser    = localStorage.getItem('omogl_user');
-    if (storedSession) setSessionId(storedSession);
-    if (storedUser) {
-      try { setUser(JSON.parse(storedUser)); } catch {}
-    }
+    const hydrate = () => {
+      const storedSession = localStorage.getItem('omogl_session');
+      const storedUser    = localStorage.getItem('omogl_user');
+      if (storedSession) setSessionId(storedSession);
+      if (storedUser) {
+        try { setUser(JSON.parse(storedUser)); } catch {}
+      }
+    };
+    hydrate();
     setIsLoading(false);
+    window.addEventListener('storage', hydrate);
+    return () => window.removeEventListener('storage', hydrate);
   }, []);
 
   const handleGoogleToken = useCallback(async (idToken: string) => {
