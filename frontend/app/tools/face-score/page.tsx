@@ -1,4 +1,5 @@
 'use client';
+import AuthGuard from '@/components/AuthGuard';
 
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
@@ -68,6 +69,7 @@ export default function FaceScorePage() {
   );
 
   return (
+    <AuthGuard>
     <div style={{ minHeight: '100vh', background: '#050508', color: '#f8fafc', padding: '40px 16px' }}>
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
         
@@ -169,5 +171,6 @@ export default function FaceScorePage() {
         )}
       </div>
     </div>
+    </AuthGuard>
   );
 }

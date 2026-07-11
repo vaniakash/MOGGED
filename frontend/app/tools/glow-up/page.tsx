@@ -1,4 +1,5 @@
 'use client';
+import AuthGuard from '@/components/AuthGuard';
 
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
@@ -81,6 +82,7 @@ export default function GlowUpPage() {
   ];
 
   return (
+    <AuthGuard>
     <div style={{ minHeight: '100vh', background: '#050508', color: '#f8fafc', padding: '40px 16px' }}>
       <div style={{ maxWidth: 900, margin: '0 auto' }}>
         
@@ -198,5 +200,6 @@ export default function GlowUpPage() {
         )}
       </div>
     </div>
+    </AuthGuard>
   );
 }

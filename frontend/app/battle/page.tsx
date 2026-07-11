@@ -2,6 +2,7 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import BattlePageClient from '@/components/BattlePageClient';
+import AuthGuard from '@/components/AuthGuard';
 
 export const metadata: Metadata = {
   title: 'Face Battle Arena — Go Live & Get Mogged',
@@ -14,7 +15,9 @@ export const metadata: Metadata = {
 export default function BattlePage() {
   return (
     <Suspense fallback={null}>
-      <BattlePageClient />
+      <AuthGuard>
+        <BattlePageClient />
+      </AuthGuard>
     </Suspense>
   );
 }

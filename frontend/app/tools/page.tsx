@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { Shield, Sparkles, Activity, Crosshair, Users } from 'lucide-react';
 import Link from 'next/link';
+import AuthGuard from '@/components/AuthGuard';
 
 export default function ToolsHubPage() {
   const router = useRouter();
@@ -44,12 +45,13 @@ export default function ToolsHubPage() {
   ];
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: '#050508',
-      color: '#f8fafc',
-      padding: '40px 16px',
-    }}>
+    <AuthGuard>
+      <div style={{
+        minHeight: '100vh',
+        background: '#050508',
+        color: '#f8fafc',
+        padding: '40px 16px',
+      }}>
       <div style={{ maxWidth: 900, margin: '0 auto' }}>
         
         <Link href="/" style={{
@@ -133,6 +135,7 @@ export default function ToolsHubPage() {
         </div>
 
       </div>
-    </div>
+      </div>
+    </AuthGuard>
   );
 }
