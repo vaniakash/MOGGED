@@ -47,15 +47,20 @@ function randomToken() {
 
 function buildUserResponse(user) {
   return {
-    email:       user.email,
-    displayName: user.displayName,
-    photoURL:    user.photoURL,
-    elo:         user.elo,
-    wins:        user.wins,
-    losses:      user.losses,
-    matches:     user.matches,
-    provider:    user.provider,
-    emailVerified: user.emailVerified,
+    email:           user.email,
+    displayName:     user.displayName,
+    photoURL:        user.photoURL,
+    elo:             user.elo,
+    wins:            user.wins,
+    losses:          user.losses,
+    matches:         user.matches,
+    provider:        user.provider,
+    emailVerified:   user.emailVerified,
+    profileComplete: user.profileComplete,
+    username:        user.username,
+    nationality:     user.nationality,
+    age:             user.age,
+    gender:          user.gender,
   };
 }
 

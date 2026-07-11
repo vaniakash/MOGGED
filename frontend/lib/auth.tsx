@@ -15,6 +15,11 @@ export interface AuthUser {
   matches: number;
   provider?: string;
   emailVerified?: boolean;
+  profileComplete?: boolean;
+  username?: string;
+  nationality?: string;
+  age?: number;
+  gender?: string;
 }
 
 interface AuthContextType {
