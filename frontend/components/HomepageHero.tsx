@@ -555,10 +555,24 @@ export default function HomepageHero() {
               textAlign: 'center', color: '#94a3b8',
               fontSize: 'clamp(13px, 2vw, 16px)', fontWeight: 500,
               letterSpacing: '0.05em', marginBottom: 24,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
             }}
           >
-            Omogl 1v1 Face Arena · Real-Time AI Face Scanning · 468 Landmarks
+            <span style={{
+              display: 'inline-block', width: 8, height: 8, borderRadius: '50%',
+              background: '#4ade80',
+              boxShadow: '0 0 0 0 rgba(74,222,128,0.7)',
+              animation: 'pulse-dot 1.8s ease-in-out infinite',
+            }} />
+            500+ users active
           </motion.p>
+          <style>{`
+            @keyframes pulse-dot {
+              0%   { box-shadow: 0 0 0 0 rgba(74,222,128,0.7); }
+              70%  { box-shadow: 0 0 0 8px rgba(74,222,128,0); }
+              100% { box-shadow: 0 0 0 0 rgba(74,222,128,0); }
+            }
+          `}</style>
 
           {/* ── BATTLE CARD ─────────────────────────────────────── */}
           <motion.div
