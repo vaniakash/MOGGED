@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Camera, RefreshCcw, Sparkles, Coins } from 'lucide-react';
 import Link from 'next/link';
+import Script from 'next/script';
 
 export default function GlowUpPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -30,6 +31,85 @@ export default function GlowUpPage() {
       if (res.ok) setCredits(data.balance);
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const buyCredits = async () => {
+    const sessionId = localStorage.getItem('omogl_session');
+    if (!sessionId || sessionId === 'demo-session') {
+      setError('You must be logged in to buy credits.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    try {
+      // 1. Create order
+      const res = await fetch(`${BACKEND_URL}/api/payments/create-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: 10000, currency: 'INR' }), // 100 INR = 10000 paise
+      });
+      const order = await res.json();
+      
+      if (order.error) {
+        setError(order.error);
+        setLoading(false);
+        return;
+      }
+
+      // 2. Open Razorpay checkout
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: order.amount,
+        currency: order.currency,
+        name: 'Omogl',
+        description: '10 Glow-Up Credits',
+        order_id: order.id,
+        handler: async function (response: any) {
+          // 3. Verify payment
+          try {
+            const verifyRes = await fetch(`${BACKEND_URL}/api/payments/verify-payment`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                sessionId
+              }),
+            });
+            const verifyData = await verifyRes.json();
+            if (verifyData.success) {
+              setCredits(verifyData.credits);
+              setError('');
+              // Optional: Show success toast
+            } else {
+              setError(verifyData.error || 'Payment verification failed.');
+            }
+          } catch (e) {
+            setError('An error occurred during verification.');
+          } finally {
+            setLoading(false);
+          }
+        },
+        prefill: {
+          name: 'Premium User',
+        },
+        theme: {
+          color: '#fbbf24'
+        }
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on('payment.failed', function (response: any) {
+        setError(response.error.description);
+        setLoading(false);
+      });
+      rzp.open();
+    } catch (err: any) {
+      setError(err.message || 'Failed to initiate payment.');
+      setLoading(false);
     }
   };
 
@@ -83,6 +163,7 @@ export default function GlowUpPage() {
 
   return (
     <AuthGuard>
+    <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
     <div style={{ minHeight: '100vh', background: '#050508', color: '#f8fafc', padding: '40px 16px' }}>
       <div style={{ maxWidth: 900, margin: '0 auto' }}>
         
@@ -95,9 +176,21 @@ export default function GlowUpPage() {
             ← Back to Tools Hub
           </Link>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.2)', padding: '6px 12px', borderRadius: 99, color: '#fbbf24', fontSize: 13, fontWeight: 700 }}>
-            <Coins size={14} />
-            {credits !== null ? `${credits} Credits` : '...'}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.2)', padding: '6px 12px', borderRadius: 99, color: '#fbbf24', fontSize: 13, fontWeight: 700 }}>
+              <Coins size={14} />
+              {credits !== null ? `${credits} Credits` : '...'}
+            </div>
+            <button 
+              onClick={buyCredits}
+              disabled={loading}
+              style={{
+                background: '#fbbf24', color: '#000', border: 'none', padding: '6px 16px', 
+                borderRadius: 99, fontSize: 13, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer'
+              }}
+            >
+              Get More
+            </button>
           </div>
         </div>
 

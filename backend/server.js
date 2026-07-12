@@ -200,6 +200,7 @@ const asyncDuelRoute      = require('./routes/asyncDuel');
 const glowUpRoute         = require('./routes/glowUp');
 const streakRoute         = require('./routes/streak');
 const authEmailRoute      = require('./routes/authEmail');
+const paymentsRoute       = require('./routes/payments');
 const { startCron }       = require('./cron/dailyReset');
 
 app.use('/api/face-score', faceScoreRoute);
@@ -208,6 +209,7 @@ app.use('/api/duel/async', asyncDuelRoute);
 app.use('/api/glow-up', glowUpRoute);
 app.use('/api/streak', streakRoute);
 app.use('/api/auth/email', authEmailRoute);
+app.use('/api/payments', paymentsRoute);
 
 // Start cron for daily streak resets
 startCron();
