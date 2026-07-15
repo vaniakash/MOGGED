@@ -82,7 +82,10 @@ function StatCard({ label, value, sub, color = '#a855f7' }: { label: string; val
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr);
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return d.toLocaleString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', hour12: true,
+  });
 }
 
 function shortId(id: string) {
@@ -315,7 +318,7 @@ export default function AdminDashboardPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {matches.slice(0, 20).map((m, i) => (
+                  {matches.slice(0, 50).map((m, i) => (
                     <tr key={m._id} style={{
                       borderBottom: '1px solid rgba(255,255,255,0.04)',
                       background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)',
@@ -336,10 +339,10 @@ export default function AdminDashboardPage() {
                           color: m.winner === 'A' ? '#4ade80' : '#a855f7',
                           fontSize: 11, fontWeight: 700,
                         }}>
-                          Player {m.winner}
+                          {m.winner === 'A' ? 'Player A ⚔️' : m.winner === 'B' ? 'Player B ⚔️' : `Player ${m.winner}`}
                         </span>
                       </td>
-                      <td style={{ padding: '10px 12px', color: '#475569', whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '10px 12px', color: '#475569', whiteSpace: 'nowrap', fontSize: 12 }}>
                         {formatDate(m.createdAt)}
                       </td>
                     </tr>

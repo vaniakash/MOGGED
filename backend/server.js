@@ -9,12 +9,9 @@ const { v4: uuidv4 } = require('uuid');
 const { OAuth2Client } = require('google-auth-library');
 const jwt = require('jsonwebtoken');
 const { calculateElo } = require('./utils/elo');
-const User  = require('./models/User');
-const Match = require('./models/Match');
-
-// ── Arena analytics counters (in-memory, reset on restart) ─────────────────
-let arenaButtonPresses = 0;   // every time ⚔️ Enter The Arena is clicked
-let battlesStarted     = 0;   // every time two players are matched
+const User      = require('./models/User');
+const Match     = require('./models/Match');
+const AppStats  = require('./models/AppStats');
 
 const app    = express();
 const server = http.createServer(app);
@@ -254,9 +251,13 @@ startCron();
 
 // ── Arena Press Tracker ────────────────────────────────────────────────────
 // Frontend calls this when user clicks ⚔️ Enter The Arena
-app.post('/api/arena/press', (req, res) => {
-  arenaButtonPresses++;
-  res.json({ ok: true, total: arenaButtonPresses });
+app.post('/api/arena/press', async (req, res) => {
+  try {
+    const stats = await AppStats.inc({ arenaButtonPresses: 1 });
+    res.json({ ok: true, total: stats.arenaButtonPresses });
+  } catch (e) {
+    res.json({ ok: true }); // non-fatal
+  }
 });
 
 // ── Admin Login ───────────────────────────────────────────────────────────
@@ -272,14 +273,17 @@ app.post('/api/admin/login', (req, res) => {
 // ── Admin Stats ────────────────────────────────────────────────────────────
 app.get('/api/admin/stats', requireAdmin, async (_, res) => {
   try {
-    const [totalUsers, totalMatches, googleUsers] = await Promise.all([
+    const [totalUsers, totalMatches, googleUsers, appStats] = await Promise.all([
       User.countDocuments(),
       Match.countDocuments(),
       User.countDocuments({ provider: 'google' }),
+      AppStats.get(),
     ]);
     const activeQueue        = waitingQueue.length;
     const activeBattles      = rooms.size;
     const activeChat         = chatRooms.size;
+    const arenaButtonPresses = appStats?.arenaButtonPresses ?? 0;
+    const battlesStarted     = appStats?.battlesStarted ?? 0;
     res.json({
       totalUsers, totalMatches, googleUsers,
       activeQueue, activeBattles, activeChat,
@@ -393,7 +397,7 @@ function createRoom(userA, userB) {
   });
   socketToRoom.set(userA.socketId, roomId);
   socketToRoom.set(userB.socketId, roomId);
-  battlesStarted++; // track every matched pair
+  AppStats.inc({ battlesStarted: 1 }).catch(() => {});
   return roomId;
 }
 
@@ -489,11 +493,16 @@ async function resolveMatch(roomId) {
 
   let eloResult = null;
   try {
+    // Always record the match, regardless of whether users are in DB
     const userADoc = await User.findOne({ sessionId: room.userA.sessionId });
     const userBDoc = await User.findOne({ sessionId: room.userB.sessionId });
+
+    let eloA = 1000, eloB = 1000, changeA = 0, changeB = 0;
     if (userADoc && userBDoc) {
       const elo = calculateElo(userADoc.elo, userBDoc.elo, winner);
-      eloResult  = elo;
+      eloResult = elo;
+      eloA = userADoc.elo; eloB = userBDoc.elo;
+      changeA = elo.changeA; changeB = elo.changeB;
       await User.updateOne({ sessionId: room.userA.sessionId }, {
         $inc: { matches: 1, wins: winner === 'A' ? 1 : 0, losses: winner === 'B' ? 1 : 0 },
         $set: { elo: elo.newRatingA, lastSeen: new Date() },
@@ -502,14 +511,16 @@ async function resolveMatch(roomId) {
         $inc: { matches: 1, wins: winner === 'B' ? 1 : 0, losses: winner === 'A' ? 1 : 0 },
         $set: { elo: elo.newRatingB, lastSeen: new Date() },
       });
-      await Match.create({
-        userA: room.userA.sessionId, userB: room.userB.sessionId,
-        scoreA: totalA, scoreB: totalB,
-        eloA: userADoc.elo, eloB: userBDoc.elo,
-        eloChangeA: elo.changeA, eloChangeB: elo.changeB,
-        winner, roomId,
-      });
     }
+
+    // Always save the match record
+    await Match.create({
+      userA: room.userA.sessionId, userB: room.userB.sessionId,
+      scoreA: totalA, scoreB: totalB,
+      eloA, eloB,
+      eloChangeA: changeA, eloChangeB: changeB,
+      winner, roomId,
+    });
   } catch (e) { console.warn('DB error (non-fatal):', e.message); }
 
   io.to(roomId).emit('match_result', {
