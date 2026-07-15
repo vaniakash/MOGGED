@@ -31,7 +31,7 @@ interface MatchResult {
 }
 
 function BattlePageInner() {
-  const [phase, setPhase]             = useState<Phase>('idle');
+  const [phase, setPhase]             = useState<Phase>('queuing');
   const [socket, setSocket]           = useState<Socket | null>(null);
   const [roomId, setRoomId]           = useState<string | null>(null);
   const [role, setRole]               = useState<'initiator' | 'receiver' | null>(null);
@@ -251,6 +251,20 @@ function BattlePageInner() {
     socket.emit('join_queue', { sessionId: sid });
   }, [socket]);
 
+  // Auto-join queue immediately on mount (no idle screen)
+  const autoJoinedRef = useRef(false);
+  useEffect(() => {
+    if (!socket || autoJoinedRef.current) return;
+    autoJoinedRef.current = true;
+    const sid = localStorage.getItem('sessionId') || genUUID();
+    localStorage.setItem('sessionId', sid);
+    if (socket.connected) {
+      socket.emit('join_queue', { sessionId: sid });
+    } else {
+      socket.once('connect', () => socket.emit('join_queue', { sessionId: sid }));
+    }
+  }, [socket]);
+
   const nextMatch = useCallback(() => {
     if (!socket) return;
     setPhase('queuing');
@@ -375,28 +389,10 @@ function BattlePageInner() {
             </motion.div>
           )}
 
-          {/* IDLE */}
-          {phase === 'idle' && (
-            <motion.div key="idle" className="text-center container-sm"
-              initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }}>
-              <h2 style={{ fontSize: 48, fontWeight: 700, color: '#f8fafc', marginBottom: 16, letterSpacing: '0.05em' }}>
-                READY?
-              </h2>
-              <p style={{ color: '#94a3b8', fontSize: 16, maxWidth: 420, margin: '0 auto 32px', lineHeight: 1.6 }}>
-                You&apos;ll be matched with a random stranger. Both cameras go live, a 10-second AI analysis runs, and the server decides who mogged who.
-              </p>
-              <motion.button id="start-battle-btn" 
-                style={{ background: '#f8fafc', color: '#050508', border: 'none', borderRadius: 8, padding: '16px 32px', fontSize: 16, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
-                whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={joinQueue}>
-                <Zap size={18} strokeWidth={2.5} /> Start Battle
-              </motion.button>
-            </motion.div>
-          )}
-
           {/* QUEUING */}
           {phase === 'queuing' && (
             <motion.div key="queuing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <QueueScreen position={queuePos} onCancel={() => { socket?.emit('leave_queue'); setPhase('idle'); }} />
+              <QueueScreen position={queuePos} onCancel={() => { socket?.emit('leave_queue'); window.location.href = '/'; }} />
             </motion.div>
           )}
 

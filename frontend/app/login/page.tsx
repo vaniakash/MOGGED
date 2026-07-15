@@ -4,8 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import Link from 'next/link';
+import { initGSI, renderGSIButton, whenGSIReady } from '@/lib/gsi';
 
-const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
 
 export default function LoginPage() {
@@ -22,31 +22,10 @@ export default function LoginPage() {
   const isSignedIn = !!user;
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !GOOGLE_CLIENT_ID) return;
-    const load = () => {
-      const g = (window as any).google;
-      if (!g?.accounts?.id) return;
-      g.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleGoogleCredential,
-        auto_select: false,
-        cancel_on_tap_outside: true,
-      });
-      if (btnRef.current) {
-        g.accounts.id.renderButton(btnRef.current, {
-          theme: 'filled_black', size: 'large', shape: 'pill', width: 300,
-          text: 'continue_with', logo_alignment: 'left',
-        });
-      }
-    };
-    if ((window as any).google?.accounts) { load(); return; }
-    const existing = document.getElementById('google-gsi');
-    if (!existing) {
-      const s = document.createElement('script');
-      s.id = 'google-gsi'; s.src = 'https://accounts.google.com/gsi/client';
-      s.async = true; s.defer = true; s.onload = load;
-      document.head.appendChild(s);
-    } else { load(); }
+    return whenGSIReady(() => {
+      initGSI(handleGoogleCredential);
+      renderGSIButton(btnRef.current, 300);
+    });
   }, []);
 
   async function handleGoogleCredential(response: { credential: string }) {
@@ -61,8 +40,10 @@ export default function LoginPage() {
       const data = await res.json();
       localStorage.setItem('omogl_session', data.sessionId);
       localStorage.setItem('omogl_user', JSON.stringify(data.user));
+      window.dispatchEvent(new StorageEvent('storage', { key: 'omogl_user', newValue: JSON.stringify(data.user) }));
       setSuccess(true);
-      setTimeout(() => router.push('/'), 1200);
+      const redirect = new URLSearchParams(window.location.search).get('redirect') || '/';
+      setTimeout(() => router.push(redirect), 1000);
     } catch (e: any) { setError(e.message || 'Something went wrong'); }
     finally { setLoading(false); }
   }
@@ -83,9 +64,10 @@ export default function LoginPage() {
       }
       localStorage.setItem('omogl_session', data.sessionId);
       localStorage.setItem('omogl_user', JSON.stringify(data.user));
-      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new StorageEvent('storage', { key: 'omogl_user', newValue: JSON.stringify(data.user) }));
       setSuccess(true);
-      setTimeout(() => router.push('/'), 1000);
+      const redirect = new URLSearchParams(window.location.search).get('redirect') || '/';
+      setTimeout(() => router.push(redirect), 1000);
     } catch { setError('Network error. Please try again.'); }
     finally { setLoading(false); }
   }

@@ -9,8 +9,9 @@ const { v4: uuidv4 } = require('uuid');
 const { OAuth2Client } = require('google-auth-library');
 const jwt = require('jsonwebtoken');
 const { calculateElo } = require('./utils/elo');
-const User  = require('./models/User');
-const Match = require('./models/Match');
+const User         = require('./models/User');
+const Match        = require('./models/Match');
+const Subscription = require('./models/Subscription');
 
 const app    = express();
 const server = http.createServer(app);
@@ -147,16 +148,21 @@ app.post('/api/auth/google', async (req, res) => {
     }
 
     return res.json({
-      sessionId:   user.sessionId,
+      sessionId:       user.sessionId,
       user: {
-        googleId:    user.googleId,
-        email:       user.email,
-        displayName: user.displayName,
-        photoURL:    user.photoURL,
-        elo:         user.elo,
-        wins:        user.wins,
-        losses:      user.losses,
-        matches:     user.matches,
+        googleId:        user.googleId,
+        email:           user.email,
+        displayName:     user.displayName,
+        photoURL:        user.photoURL,
+        elo:             user.elo,
+        wins:            user.wins,
+        losses:          user.losses,
+        matches:         user.matches,
+        profileComplete: user.profileComplete || false,
+        username:        user.username || '',
+        nationality:     user.nationality || '',
+        age:             user.age || null,
+        gender:          user.gender || '',
       },
     });
   } catch (err) {
@@ -193,6 +199,37 @@ app.put('/api/profile', async (req, res) => {
   }
 });
 
+// ── Get current user by sessionId ─────────────────────────────────────────
+app.get('/api/me', async (req, res) => {
+  const sessionId = req.query.sessionId || req.headers['x-session-id'];
+  if (!sessionId) return res.status(400).json({ error: 'Missing sessionId' });
+  try {
+    const user = await User.findOne({ sessionId })
+      .select('sessionId googleId email displayName photoURL elo wins losses matches profileComplete username nationality age gender provider');
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    return res.json({
+      sessionId: user.sessionId,
+      user: {
+        googleId:        user.googleId,
+        email:           user.email,
+        displayName:     user.displayName,
+        photoURL:        user.photoURL,
+        elo:             user.elo,
+        wins:            user.wins,
+        losses:          user.losses,
+        matches:         user.matches,
+        profileComplete: user.profileComplete || false,
+        username:        user.username || '',
+        nationality:     user.nationality || '',
+        age:             user.age || null,
+        gender:          user.gender || '',
+      },
+    });
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
+  }
+});
+
 // ── Solo Tools (Pollinations AI) ───────────────────────────────────────────
 const faceScoreRoute     = require('./routes/faceScore').router;
 const celebrityMatchRoute = require('./routes/celebrityMatch');
@@ -214,6 +251,20 @@ app.use('/api/payments', paymentsRoute);
 // Start cron for daily streak resets
 startCron();
 
+// ── Subscription Status ────────────────────────────────────────────────────
+app.get('/api/subscription/status', async (req, res) => {
+  const sessionId = req.query.sessionId || req.headers['x-session-id'];
+  if (!sessionId) return res.status(400).json({ error: 'Missing sessionId' });
+  try {
+    const sub = await Subscription.getActive(sessionId);
+    if (!sub) return res.json({ active: false, plan: null, expiresAt: null, daysLeft: 0 });
+    const daysLeft = Math.max(0, Math.ceil((new Date(sub.expiresAt) - new Date()) / (1000 * 60 * 60 * 24)));
+    res.json({ active: true, plan: sub.plan, expiresAt: sub.expiresAt, daysLeft, gateway: sub.gateway });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ── Admin Login ───────────────────────────────────────────────────────────
 app.post('/api/admin/login', (req, res) => {
   const { email, password } = req.body;
@@ -227,15 +278,24 @@ app.post('/api/admin/login', (req, res) => {
 // ── Admin Stats ────────────────────────────────────────────────────────────
 app.get('/api/admin/stats', requireAdmin, async (_, res) => {
   try {
-    const [totalUsers, totalMatches, googleUsers] = await Promise.all([
+    const now = new Date();
+    const [totalUsers, totalMatches, googleUsers, activeSubsCount, revenue] = await Promise.all([
       User.countDocuments(),
       Match.countDocuments(),
       User.countDocuments({ provider: 'google' }),
+      Subscription.countDocuments({ status: 'active', expiresAt: { $gt: now } }),
+      Subscription.aggregate([
+        { $group: {
+          _id: '$plan',
+          count: { $sum: 1 },
+          totalPaise: { $sum: '$amount' },
+        }},
+      ]),
     ]);
-    const activeQueue    = waitingQueue.length;
-    const activeBattles  = rooms.size;
-    const activeChat     = chatRooms.size;
-    res.json({ totalUsers, totalMatches, googleUsers, activeQueue, activeBattles, activeChat });
+    const activeQueue   = waitingQueue.length;
+    const activeBattles = rooms.size;
+    const activeChat    = chatRooms.size;
+    res.json({ totalUsers, totalMatches, googleUsers, activeQueue, activeBattles, activeChat, activeSubsCount, revenue });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -272,6 +332,117 @@ app.get('/api/admin/matches', requireAdmin, async (req, res) => {
     res.json({ matches });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Admin Subscriptions List ───────────────────────────────────────────────
+app.get('/api/admin/subscriptions', requireAdmin, async (req, res) => {
+  try {
+    const page   = Math.max(1, parseInt(req.query.page) || 1);
+    const limit  = Math.min(100, parseInt(req.query.limit) || 25);
+    const skip   = (page - 1) * limit;
+    const status = req.query.status; // filter by status
+
+    const filter = status ? { status } : {};
+    const [subs, total] = await Promise.all([
+      Subscription.find(filter).sort('-createdAt').skip(skip).limit(limit).lean(),
+      Subscription.countDocuments(filter),
+    ]);
+
+    // Enrich with user info
+    const enriched = await Promise.all(subs.map(async sub => {
+      const user = await User.findOne({ sessionId: sub.sessionId })
+        .select('displayName email photoURL username').lean();
+      return { ...sub, user: user || null };
+    }));
+
+    res.json({ subscriptions: enriched, total, page, pages: Math.ceil(total / limit) });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── Admin: Manually Grant Subscription ────────────────────────────────────
+app.post('/api/admin/subscriptions/grant', requireAdmin, async (req, res) => {
+  try {
+    const { sessionId, plan, days, note } = req.body;
+    if (!sessionId || !plan || !days) return res.status(400).json({ error: 'Missing fields' });
+
+    const user = await User.findOne({ sessionId });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    // Cancel existing active subs
+    await Subscription.updateMany({ sessionId, status: 'active' }, { $set: { status: 'cancelled' } });
+
+    const startDate = new Date();
+    const expiresAt = new Date(startDate.getTime() + parseInt(days) * 24 * 60 * 60 * 1000);
+
+    const sub = await Subscription.create({
+      sessionId, userId: user._id, plan, status: 'active',
+      startDate, expiresAt, amount: 0, currency: 'INR',
+      gateway: 'india', grantedByAdmin: true, adminNote: note || 'Manual grant',
+    });
+
+    res.json({ success: true, subscription: sub });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── Admin: Extend Subscription ─────────────────────────────────────────────
+app.post('/api/admin/subscriptions/:id/extend', requireAdmin, async (req, res) => {
+  try {
+    const { days } = req.body;
+    if (!days) return res.status(400).json({ error: 'Missing days' });
+
+    const sub = await Subscription.findById(req.params.id);
+    if (!sub) return res.status(404).json({ error: 'Subscription not found' });
+
+    const base = sub.expiresAt > new Date() ? sub.expiresAt : new Date();
+    sub.expiresAt = new Date(base.getTime() + parseInt(days) * 24 * 60 * 60 * 1000);
+    sub.status = 'active';
+    await sub.save();
+
+    res.json({ success: true, expiresAt: sub.expiresAt });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── Admin: Cancel Subscription ─────────────────────────────────────────────
+app.post('/api/admin/subscriptions/:id/cancel', requireAdmin, async (req, res) => {
+  try {
+    const sub = await Subscription.findByIdAndUpdate(
+      req.params.id,
+      { $set: { status: 'cancelled' } },
+      { new: true }
+    );
+    if (!sub) return res.status(404).json({ error: 'Subscription not found' });
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── Admin: Revenue Stats ────────────────────────────────────────────────────
+app.get('/api/admin/revenue', requireAdmin, async (req, res) => {
+  try {
+    const now = new Date();
+    const [byPlan, total, activeCount] = await Promise.all([
+      Subscription.aggregate([
+        { $match: { grantedByAdmin: { $ne: true } } },
+        { $group: {
+          _id: { plan: '$plan', currency: '$currency' },
+          count: { $sum: 1 },
+          totalAmount: { $sum: '$amount' },
+        }},
+      ]),
+      Subscription.countDocuments({ grantedByAdmin: { $ne: true } }),
+      Subscription.countDocuments({ status: 'active', expiresAt: { $gt: now } }),
+    ]);
+    res.json({ byPlan, total, activeCount });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
 });
 

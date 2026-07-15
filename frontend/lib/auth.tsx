@@ -61,14 +61,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Rehydrate from localStorage on mount + listen for changes from email login
+  // Rehydrate from localStorage on mount + listen for same-tab and cross-tab changes
   useEffect(() => {
     const hydrate = () => {
       const storedSession = localStorage.getItem('omogl_session');
       const storedUser    = localStorage.getItem('omogl_user');
-      if (storedSession) setSessionId(storedSession);
+      if (storedSession) {
+        setSessionId(storedSession);
+      } else {
+        setSessionId(null);
+      }
       if (storedUser) {
-        try { setUser(JSON.parse(storedUser)); } catch {}
+        try { setUser(JSON.parse(storedUser)); } catch { setUser(null); }
+      } else {
+        setUser(null);
       }
     };
     hydrate();
@@ -107,20 +113,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         callback: () => {}, // not used for id_token flow
       });
 
-      // Use the ID token flow instead
-      g.accounts.id.initialize({
-        client_id: clientId,
-        callback: async (response: { credential: string }) => {
-          try {
-            await handleGoogleToken(response.credential);
-            resolve();
-          } catch (err) {
-            reject(err);
-          }
-        },
-        auto_select: false,
-        cancel_on_tap_outside: true,
-      });
+      // Use the ID token flow instead — only initialize once globally
+      if (!(window as any).__gsiInitDone) {
+        g.accounts.id.initialize({
+          client_id: clientId,
+          callback: async (response: { credential: string }) => {
+            try {
+              await handleGoogleToken(response.credential);
+              resolve();
+            } catch (err) {
+              reject(err);
+            }
+          },
+          auto_select: false,
+          cancel_on_tap_outside: true,
+        });
+        (window as any).__gsiInitDone = true;
+      }
 
       g.accounts.id.prompt((notification: any) => {
         if (notification.isNotDisplayed() || notification.isSkippedMoment()) {

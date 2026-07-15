@@ -8,6 +8,8 @@ import { Camera, Crosshair, ScanFace, Skull, X } from 'lucide-react';
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
+import { initGSI as initGSISingleton, renderGSIButton, whenGSIReady } from '@/lib/gsi';
+
 const PHRASES = [
   "THE INTERNET'S FACE ARENA",
   "MOG OR GET MOGGED",
@@ -70,7 +72,7 @@ export default function HomepageHero() {
   const [pLoading, setPLoading]         = useState(false);
   const [pError, setPError]             = useState('');
 
-  // ── Load from localStorage ──────────────────────────────────────────────
+  // ── Load from localStorage + refresh from server ────────────────────────
   useEffect(() => {
     setMounted(true);
     const storedUser    = localStorage.getItem('omogl_user');
@@ -78,43 +80,31 @@ export default function HomepageHero() {
     if (storedUser) {
       try { setUser(JSON.parse(storedUser)); } catch {}
     }
-    if (storedSession) setSessionId(storedSession);
+    if (storedSession) {
+      setSessionId(storedSession);
+      // Refresh user data from server to ensure profileComplete is up-to-date
+      fetch(`${BACKEND_URL}/api/me?sessionId=${storedSession}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data?.user) {
+            localStorage.setItem('omogl_user', JSON.stringify(data.user));
+            setUser(data.user);
+          }
+        })
+        .catch(() => {}); // silently ignore — localStorage data is still used
+    }
     const t1 = setInterval(() => setCountIdx(i => (i + 1) % PHRASES.length), 2800);
     return () => clearInterval(t1);
   }, []);
 
-  // ── Init GSI once globally ──────────────────────────────────────────────
-  const gsiInitialized = useRef(false);
-
-  function renderGSIButton(container: HTMLDivElement | null, width = 300) {
-    const g = (window as any).google;
-    if (!g?.accounts?.id || !container) return;
-    g.accounts.id.renderButton(container, {
-      theme: 'filled_black', size: 'large', shape: 'pill',
-      width, text: 'continue_with',
-    });
-  }
 
   useEffect(() => {
-    if (!mounted || !GOOGLE_CLIENT_ID) return;
-    function initGSI() {
-      const g = (window as any).google;
-      if (!g?.accounts?.id) return;
-      if (!gsiInitialized.current) {
-        g.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleCredential, auto_select: false });
-        gsiInitialized.current = true;
-      }
+    if (!mounted) return;
+    return whenGSIReady(() => {
+      initGSISingleton(handleCredential);
       renderGSIButton(btnRef.current, Math.min(300, window.innerWidth - 64));
       setGsiReady(true);
-    }
-    const ex = document.getElementById('google-gsi-script');
-    if (ex) { initGSI(); }
-    else {
-      const s = document.createElement('script');
-      s.id = 'google-gsi-script'; s.src = 'https://accounts.google.com/gsi/client';
-      s.async = true; s.defer = true; s.onload = initGSI;
-      document.head.appendChild(s);
-    }
+    });
   }, [mounted]);
 
   // ── Re-render GSI button inside modal ──────────────────────────────────
@@ -142,6 +132,8 @@ export default function HomepageHero() {
       localStorage.setItem('omogl_user', JSON.stringify(data.user));
       setUser(data.user);
       setSessionId(data.sessionId);
+      // Notify AuthProvider — storage event only fires cross-tab, so dispatch manually
+      window.dispatchEvent(new StorageEvent('storage', { key: 'omogl_user', newValue: JSON.stringify(data.user) }));
 
       // Check if profile is complete
       if (!data.user.profileComplete) {
@@ -160,21 +152,14 @@ export default function HomepageHero() {
     }
   }
 
-  // ── Enter Arena click ───────────────────────────────────────────────────
+  // ── Enter Arena click — zero friction, instant entry ─────────────────────
   function handleEnterArena() {
-    if (!user) {
-      setModalStep('login');
-      return;
-    }
-    if (!user.profileComplete) {
-      setPUsername(user.displayName || user.username || '');
-      setPNationality(user.nationality || '');
-      setPAge(user.age ? String(user.age) : '');
-      setPGender(user.gender || '');
-      setModalStep('profile');
-      return;
-    }
     router.push('/battle');
+  }
+
+  // ── Stranger Love click ─────────────────────────────────────────────────
+  function handleStrangerLove() {
+    router.push('/chat');
   }
 
   // ── Profile form submit ─────────────────────────────────────────────────
@@ -205,6 +190,8 @@ export default function HomepageHero() {
       const updatedUser = { ...user!, ...data.user, profileComplete: true };
       localStorage.setItem('omogl_user', JSON.stringify(updatedUser));
       setUser(updatedUser);
+      // Notify AuthProvider — storage event only fires cross-tab, so dispatch manually
+      window.dispatchEvent(new StorageEvent('storage', { key: 'omogl_user', newValue: JSON.stringify(updatedUser) }));
       setModalStep(null);
       router.push('/battle');
     } catch (err: any) {
@@ -216,14 +203,17 @@ export default function HomepageHero() {
 
   function handleSignOut() {
     localStorage.removeItem('omogl_user');
+    localStorage.removeItem('omogl_session');
     setUser(null);
+    setSessionId(null);
+    // Notify AuthProvider — storage event only fires cross-tab, so dispatch manually
+    window.dispatchEvent(new StorageEvent('storage', { key: 'omogl_user', newValue: null }));
     const g = (window as any).google;
     if (g?.accounts?.id) g.accounts.id.disableAutoSelect();
     setTimeout(() => {
       const g2 = (window as any).google;
       if (g2?.accounts?.id && btnRef.current) {
-        g2.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleCredential, auto_select: false });
-        g2.accounts.id.renderButton(btnRef.current, { theme: 'filled_black', size: 'large', shape: 'pill', width: 300, text: 'continue_with' });
+        renderGSIButton(btnRef.current, 300);
       }
     }, 100);
   }
@@ -587,38 +577,6 @@ export default function HomepageHero() {
           >
             <div style={{ padding: 'clamp(24px, 5vw, 40px)' }}>
 
-              {/* Split Screen Arena Preview */}
-              <div style={{
-                display: 'grid', gridTemplateColumns: '1fr auto 1fr',
-                gap: 16, alignItems: 'center', marginBottom: 32,
-              }}>
-                <div style={{
-                  borderRadius: 12, border: '1px solid #1e222a',
-                  background: '#181b21', padding: '24px 16px', textAlign: 'center',
-                }}>
-                  <div style={{ fontSize: 36, marginBottom: 12 }}>⚔️</div>
-                  <div style={{ fontFamily: 'Bebas Neue, cursive', fontSize: 32, color: '#f8fafc', marginBottom: 4 }}>7.8</div>
-                  <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600, letterSpacing: '0.05em' }}>YOU</div>
-                  <div style={{ marginTop: 16, padding: '6px 12px', background: '#2a2f3a', borderRadius: 6, fontSize: 12, color: '#f8fafc', fontWeight: 600 }}>
-                    🦅 Hunter Eyes
-                  </div>
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontFamily: 'Bebas Neue, cursive', fontSize: 'clamp(24px, 4vw, 40px)', color: '#64748b', lineHeight: 1 }}>VS</div>
-                  <div style={{ fontSize: 10, color: '#475569', fontWeight: 600, letterSpacing: '0.1em', marginTop: 8 }}>SCANNING</div>
-                </div>
-                <div style={{
-                  borderRadius: 12, border: '1px solid #1e222a',
-                  background: '#181b21', padding: '24px 16px', textAlign: 'center',
-                }}>
-                  <div style={{ fontSize: 36, marginBottom: 12 }}>⚔️</div>
-                  <div style={{ fontFamily: 'Bebas Neue, cursive', fontSize: 32, color: '#f8fafc', marginBottom: 4 }}>5.2</div>
-                  <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600, letterSpacing: '0.05em' }}>STRANGER</div>
-                  <div style={{ marginTop: 16, padding: '6px 12px', background: '#2a2f3a', borderRadius: 6, fontSize: 12, color: '#f8fafc', fontWeight: 600 }}>
-                    💀 NPC Face
-                  </div>
-                </div>
-              </div>
 
               {/* CTA Buttons */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -639,56 +597,6 @@ export default function HomepageHero() {
                   ⚔️ Enter The Arena
                 </button>
 
-                <button
-                  id="friend-battle-btn"
-                  onClick={handleEnterArena}
-                  style={{
-                    width: '100%', padding: '12px', borderRadius: 8,
-                    border: '1px solid #2a2f3a', background: '#181b21',
-                    color: '#94a3b8', fontFamily: 'inherit', fontSize: 14,
-                    fontWeight: 600, cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    gap: 8, transition: 'background 0.2s',
-                  }}
-                  onMouseOver={e => e.currentTarget.style.background = '#1e222a'}
-                  onMouseOut={e => e.currentTarget.style.background = '#181b21'}
-                >
-                  🔗 Friend Battle
-                </button>
-
-                <button
-                  id="stranger-love-btn"
-                  onClick={() => router.push('/chat')}
-                  style={{
-                    width: '100%', padding: '12px', borderRadius: 8,
-                    border: '1px solid #2a2f3a', background: '#181b21',
-                    color: '#f87171', fontFamily: 'inherit', fontSize: 14,
-                    fontWeight: 600, cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    gap: 8, transition: 'background 0.2s',
-                  }}
-                  onMouseOver={e => e.currentTarget.style.background = '#1e222a'}
-                  onMouseOut={e => e.currentTarget.style.background = '#181b21'}
-                >
-                  💬 Find Your Stranger Love
-                </button>
-
-                <button
-                  id="solo-tools-btn"
-                  onClick={() => router.push('/tools')}
-                  style={{
-                    width: '100%', padding: '12px', borderRadius: 8,
-                    border: '1px solid #2a2f3a', background: '#181b21',
-                    color: '#a855f7', fontFamily: 'inherit', fontSize: 14,
-                    fontWeight: 600, cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    gap: 8, transition: 'background 0.2s',
-                  }}
-                  onMouseOver={e => e.currentTarget.style.background = '#1e222a'}
-                  onMouseOut={e => e.currentTarget.style.background = '#181b21'}
-                >
-                  🔬 Solo Tools & Labs
-                </button>
               </div>
             </div>
 

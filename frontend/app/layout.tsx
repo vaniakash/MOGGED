@@ -119,7 +119,7 @@ const organizationSchema = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -185,6 +185,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             });
           `}
         </Script>
+
+        {/* ── Google Sign-In (GSI) — loaded ONCE globally ───────────────── */}
+        <Script
+          id="google-gsi-script"
+          src="https://accounts.google.com/gsi/client"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );

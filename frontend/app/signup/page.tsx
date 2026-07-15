@@ -4,8 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import Link from 'next/link';
+import { initGSI, renderGSIButton, whenGSIReady } from '@/lib/gsi';
 
-const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
 
 function PasswordStrength({ password }: { password: string }) {
@@ -58,28 +58,10 @@ export default function SignupPage() {
   }, [user]);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !GOOGLE_CLIENT_ID) return;
-    const load = () => {
-      const g = (window as any).google;
-      if (!g?.accounts?.id) return;
-      g.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleGoogleCredential,
-        auto_select: false,
-      });
-      if (btnRef.current) {
-        g.accounts.id.renderButton(btnRef.current, {
-          theme: 'filled_black', size: 'large', shape: 'pill', width: 300,
-          text: 'signup_with', logo_alignment: 'left',
-        });
-      }
-    };
-    if ((window as any).google?.accounts) { load(); return; }
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true; script.defer = true;
-    script.onload = load;
-    document.head.appendChild(script);
+    return whenGSIReady(() => {
+      initGSI(handleGoogleCredential);
+      renderGSIButton(btnRef.current, 300);
+    });
   }, []);
 
   async function handleGoogleCredential(response: { credential: string }) {

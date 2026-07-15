@@ -1,92 +1,152 @@
 const express = require('express');
-const crypto = require('crypto');
+const crypto  = require('crypto');
 const Razorpay = require('razorpay');
-const Credit = require('../models/Credit');
-const User = require('../models/User');
+const User         = require('../models/User');
+const Subscription = require('../models/Subscription');
 
 const router = express.Router();
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
+// ── Two Razorpay instances ─────────────────────────────────────────────────
+const razorpayIN = new Razorpay({
+  key_id:     process.env.RAZORPAY_KEY_ID_IN,
+  key_secret: process.env.RAZORPAY_KEY_SECRET_IN,
 });
 
-// POST /api/payments/create-order
+const razorpayINTL = new Razorpay({
+  key_id:     process.env.RAZORPAY_KEY_ID_INTL,
+  key_secret: process.env.RAZORPAY_KEY_SECRET_INTL,
+});
+
+// ── Plan definitions ─────────────────────────────────────────────────────
+const PLANS = {
+  trial: {
+    label:       '7-Day Trial',
+    durationDays: 7,
+    amountINR:   25000,   // paise  → ₹250
+    amountUSD:   300,     // cents  → $3.00
+  },
+  pro: {
+    label:       'Pro Monthly',
+    durationDays: 30,
+    amountINR:   85000,   // paise  → ₹850
+    amountUSD:   1000,    // cents  → $10.00
+  },
+  girls: {
+    label:       'Girls Only Monthly',
+    durationDays: 30,
+    amountINR:   165000,  // paise  → ₹1650
+    amountUSD:   2000,    // cents  → $20.00
+  },
+};
+
+function isIndia(country) {
+  return country === 'IN' || country === 'India' || country === 'Indian';
+}
+
+// ── POST /api/payments/create-order ─────────────────────────────────────
+// Body: { plan, country, sessionId }
 router.post('/create-order', async (req, res) => {
   try {
-    const { amount, currency = 'INR', receipt = 'receipt_1' } = req.body;
+    const { plan, country, sessionId } = req.body;
+    if (!plan || !PLANS[plan]) return res.status(400).json({ error: 'Invalid plan' });
+    if (!sessionId)             return res.status(400).json({ error: 'Missing sessionId' });
 
-    if (!amount || amount < 100) {
-      return res.status(400).json({ error: 'Minimum amount is 100 paise.' });
-    }
+    const useIndia   = isIndia(country);
+    const razorpay   = useIndia ? razorpayIN : razorpayINTL;
+    const planData   = PLANS[plan];
+    const amount     = useIndia ? planData.amountINR : planData.amountUSD;
+    const currency   = useIndia ? 'INR' : 'USD';
+    const keyId      = useIndia ? process.env.RAZORPAY_KEY_ID_IN : process.env.RAZORPAY_KEY_ID_INTL;
 
-    const options = {
-      amount, // amount in smallest currency unit (paise)
+    const order = await razorpay.orders.create({
+      amount,
       currency,
-      receipt,
-    };
+      receipt: `omogl_${plan}_${sessionId.slice(0, 8)}_${Date.now()}`,
+      notes: { plan, sessionId, country: country || 'unknown' },
+    });
 
-    const order = await razorpay.orders.create(options);
-    res.json(order);
-  } catch (error) {
-    console.error('[create-order]', error);
-    res.status(500).json({ error: 'Failed to create order', details: error.message });
+    res.json({
+      orderId:  order.id,
+      amount:   order.amount,
+      currency: order.currency,
+      keyId,           // tell frontend which public key to use
+      gateway:  useIndia ? 'india' : 'international',
+      plan,
+      planLabel: planData.label,
+    });
+  } catch (err) {
+    console.error('[create-order]', err.message);
+    res.status(500).json({ error: 'Failed to create order', details: err.message });
   }
 });
 
-// POST /api/payments/verify-payment
-router.post('/verify-payment', async (req, res) => {
+// ── POST /api/payments/verify ────────────────────────────────────────────
+// Body: { razorpay_order_id, razorpay_payment_id, razorpay_signature, sessionId, plan, country, gateway }
+router.post('/verify', async (req, res) => {
   try {
     const {
-      razorpay_order_id,
-      razorpay_payment_id,
-      razorpay_signature,
-      sessionId
+      razorpay_order_id, razorpay_payment_id, razorpay_signature,
+      sessionId, plan, country, gateway, amount, currency,
     } = req.body;
 
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !sessionId) {
-      return res.status(400).json({ error: 'Missing required parameters.' });
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !sessionId || !plan) {
+      return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const body = razorpay_order_id + '|' + razorpay_payment_id;
+    // Pick the right secret based on gateway
+    const secret = (gateway === 'india')
+      ? process.env.RAZORPAY_KEY_SECRET_IN
+      : process.env.RAZORPAY_KEY_SECRET_INTL;
 
-    const expectedSignature = crypto
-      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-      .update(body.toString())
-      .digest('hex');
+    const body      = `${razorpay_order_id}|${razorpay_payment_id}`;
+    const expected  = crypto.createHmac('sha256', secret).update(body).digest('hex');
 
-    if (expectedSignature === razorpay_signature) {
-      // Signature is valid. Give user credits.
-      // E.g., 100 INR = 10000 paise = 10 Credits
-      const creditsToAdd = 10;
-      
-      const credit = await Credit.findOneAndUpdate(
-        { sessionId },
-        { 
-          $inc: { balance: creditsToAdd },
-          $push: {
-            history: {
-              amount: creditsToAdd,
-              reason: `razorpay_purchase_${razorpay_payment_id}`,
-              createdAt: new Date()
-            }
-          },
-          $setOnInsert: { sessionId }
-        },
-        { upsert: true, new: true }
-      );
-      
-      return res.json({ 
-        success: true, 
-        message: 'Payment verified successfully.', 
-        credits: credit.balance 
-      });
-    } else {
-      return res.status(400).json({ error: 'Invalid signature. Payment verification failed.' });
+    if (expected !== razorpay_signature) {
+      return res.status(400).json({ error: 'Invalid signature — payment verification failed' });
     }
-  } catch (error) {
-    console.error('[verify-payment]', error);
-    res.status(500).json({ error: 'Failed to verify payment', details: error.message });
+
+    // Find user
+    const user = await User.findOne({ sessionId });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    // Deactivate any existing active subscriptions for this session
+    await Subscription.updateMany(
+      { sessionId, status: 'active' },
+      { $set: { status: 'cancelled' } }
+    );
+
+    // Calculate expiry
+    const planData  = PLANS[plan];
+    const startDate = new Date();
+    const expiresAt = new Date(startDate.getTime() + planData.durationDays * 24 * 60 * 60 * 1000);
+
+    // Create subscription record
+    const sub = await Subscription.create({
+      sessionId,
+      userId:    user._id,
+      plan,
+      status:    'active',
+      startDate,
+      expiresAt,
+      paymentId: razorpay_payment_id,
+      orderId:   razorpay_order_id,
+      amount:    amount || 0,
+      currency:  currency || (gateway === 'india' ? 'INR' : 'USD'),
+      gateway:   gateway || 'india',
+      country:   country || null,
+    });
+
+    console.log(`✅ Subscription activated: ${plan} for ${sessionId} → expires ${expiresAt.toISOString()}`);
+
+    res.json({
+      success:    true,
+      plan,
+      expiresAt:  expiresAt.toISOString(),
+      daysLeft:   planData.durationDays,
+    });
+  } catch (err) {
+    console.error('[verify]', err.message);
+    res.status(500).json({ error: 'Failed to verify payment', details: err.message });
   }
 });
 

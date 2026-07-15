@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import ChatPageClient from '@/components/ChatPageClient';
 import AuthGuard from '@/components/AuthGuard';
+import SubscriptionGuard from '@/components/SubscriptionGuard';
 
 export const metadata: Metadata = {
   title: 'Omogl - Find Your Stranger Love',
@@ -10,7 +11,9 @@ export const metadata: Metadata = {
 export default function ChatPage() {
   return (
     <AuthGuard>
-      <ChatPageClient />
+      <SubscriptionGuard>
+        <ChatPageClient />
+      </SubscriptionGuard>
     </AuthGuard>
   );
 }
