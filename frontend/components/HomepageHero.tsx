@@ -154,6 +154,8 @@ export default function HomepageHero() {
 
   // ── Enter Arena click — zero friction, instant entry ─────────────────────
   function handleEnterArena() {
+    // Fire-and-forget: track the arena button press
+    fetch(`${BACKEND_URL}/api/arena/press`, { method: 'POST' }).catch(() => {});
     router.push('/battle');
   }
 

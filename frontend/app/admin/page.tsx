@@ -61,7 +61,7 @@ interface AdminSubscription {
   user: { displayName: string | null; email: string | null } | null;
 }
 
-type Tab = 'overview' | 'users' | 'matches' | 'subscriptions' | 'tools';
+type Tab = 'overview' | 'users' | 'matches' | 'tools';
 
 function StatCard({ label, value, sub, color = '#a855f7' }: { label: string; value: number | string; sub?: string; color?: string }) {
   return (
@@ -96,12 +96,6 @@ export default function AdminDashboardPage() {
   const [stats, setStats]     = useState<Stats | null>(null);
   const [users, setUsers]     = useState<AdminUser[]>([]);
   const [matches, setMatches] = useState<AdminMatch[]>([]);
-  const [subs, setSubs]       = useState<AdminSubscription[]>([]);
-  const [subsTotal, setSubsTotal] = useState(0);
-  const [subsFilter, setSubsFilter] = useState('');
-  const [grantForm, setGrantForm]   = useState({ sessionId: '', plan: 'trial', days: '7', note: '' });
-  const [grantLoading, setGrantLoading] = useState(false);
-  const [grantMsg, setGrantMsg] = useState('');
   const [toolsData, setToolsData] = useState<{ faceScores: any[], credits: any[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [usersPage, setUsersPage] = useState(1);
@@ -156,61 +150,6 @@ export default function AdminDashboardPage() {
       .catch(console.error);
   }, [token, tab, authFetch]);
 
-  // Load subscriptions
-  useEffect(() => {
-    if (!token || tab !== 'subscriptions') return;
-    const url = subsFilter
-      ? `${BACKEND_URL}/api/admin/subscriptions?status=${subsFilter}`
-      : `${BACKEND_URL}/api/admin/subscriptions`;
-    authFetch(url)
-      .then(d => { setSubs(d.subscriptions || []); setSubsTotal(d.total || 0); })
-      .catch(console.error);
-  }, [token, tab, subsFilter, authFetch]);
-
-  async function handleCancelSub(id: string) {
-    if (!confirm('Cancel this subscription?')) return;
-    const t = sessionStorage.getItem('admin_token');
-    await fetch(`${BACKEND_URL}/api/admin/subscriptions/${id}/cancel`, {
-      method: 'POST', headers: { Authorization: `Bearer ${t}` },
-    });
-    setSubs(prev => prev.map(s => s._id === id ? { ...s, status: 'cancelled' } : s));
-  }
-
-  async function handleExtendSub(id: string) {
-    const days = prompt('Extend by how many days?', '30');
-    if (!days) return;
-    const t = sessionStorage.getItem('admin_token');
-    const res = await fetch(`${BACKEND_URL}/api/admin/subscriptions/${id}/extend`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
-      body: JSON.stringify({ days }),
-    });
-    const data = await res.json();
-    if (data.success) {
-      setSubs(prev => prev.map(s => s._id === id ? { ...s, status: 'active', expiresAt: data.expiresAt } : s));
-    }
-  }
-
-  async function handleGrantSub(e: React.FormEvent) {
-    e.preventDefault();
-    setGrantLoading(true); setGrantMsg('');
-    try {
-      const t = sessionStorage.getItem('admin_token');
-      const res = await fetch(`${BACKEND_URL}/api/admin/subscriptions/grant`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
-        body: JSON.stringify(grantForm),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setGrantMsg('✅ Subscription granted successfully!');
-        setGrantForm({ sessionId: '', plan: 'trial', days: '7', note: '' });
-      } else {
-        setGrantMsg(`❌ ${data.error}`);
-      }
-    } catch { setGrantMsg('❌ Network error'); }
-    finally { setGrantLoading(false); }
-  }
 
   function handleLogout() {
     sessionStorage.removeItem('admin_token');
@@ -320,7 +259,8 @@ export default function AdminDashboardPage() {
             <StatCard label="Total Users" value={stats.totalUsers} color="#a855f7" sub="all-time registrations" />
             <StatCard label="Total Battles" value={stats.totalMatches} color="#00f5d4" sub="completed matches" />
             <StatCard label="Google Accounts" value={stats.googleUsers} color="#4ade80" sub="signed in via Google" />
-            <StatCard label="Active Subs" value={(stats as any).activeSubsCount ?? 0} color="#fbbf24" sub="paying members" />
+            <StatCard label="⚔️ Arena Presses" value={(stats as any).arenaButtonPresses ?? 0} color="#fbbf24" sub="Enter The Arena clicks" />
+            <StatCard label="⚔️ Battles Started" value={(stats as any).battlesStarted ?? 0} color="#f87171" sub="matched pairs" />
           </div>
         )}
 
@@ -333,7 +273,7 @@ export default function AdminDashboardPage() {
           width: 'fit-content',
           flexWrap: 'wrap',
         }}>
-          {(['overview', 'users', 'matches', 'subscriptions', 'tools'] as Tab[]).map(t => (
+          {(['overview', 'users', 'matches', 'tools'] as Tab[]).map(t => (
             <button
               key={t}
               id={`admin-tab-${t}`}
@@ -349,7 +289,7 @@ export default function AdminDashboardPage() {
                 transition: 'all 0.15s',
               }}
             >
-              {t === 'overview' ? '📊 Overview' : t === 'users' ? '👥 Users' : t === 'matches' ? '⚔️ Matches' : t === 'subscriptions' ? '💳 Subscriptions' : '🔬 Tools'}
+              {t === 'overview' ? '📊 Overview' : t === 'users' ? '👥 Users' : t === 'matches' ? '⚔️ Matches' : '🔬 Tools'}
             </button>
           ))}
         </div>
@@ -636,151 +576,9 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* ── Subscriptions Tab ── */}
-        {tab === 'subscriptions' && (
-          <div>
-            {/* Grant form */}
-            <div style={{
-              background: 'rgba(168,85,247,0.06)', border: '1px solid rgba(168,85,247,0.2)',
-              borderRadius: 16, padding: '24px', marginBottom: 28,
-            }}>
-              <h3 style={{ color: '#a855f7', fontWeight: 700, fontSize: 15, marginBottom: 16 }}>
-                🎁 Grant Free Subscription
-              </h3>
-              <form onSubmit={handleGrantSub} style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <label style={{ color: '#64748b', fontSize: 11, fontWeight: 600 }}>SESSION ID</label>
-                  <input
-                    placeholder="User session ID"
-                    value={grantForm.sessionId}
-                    onChange={e => setGrantForm(f => ({ ...f, sessionId: e.target.value }))}
-                    required
-                    style={{
-                      background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: 8, padding: '8px 12px', color: '#f8fafc', fontSize: 13, width: 240,
-                    }}
-                  />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <label style={{ color: '#64748b', fontSize: 11, fontWeight: 600 }}>PLAN</label>
-                  <select
-                    value={grantForm.plan}
-                    onChange={e => setGrantForm(f => ({ ...f, plan: e.target.value }))}
-                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 12px', color: '#f8fafc', fontSize: 13 }}
-                  >
-                    <option value="trial">Trial (7d)</option>
-                    <option value="pro">Pro</option>
-                    <option value="girls">Girls Only</option>
-                  </select>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <label style={{ color: '#64748b', fontSize: 11, fontWeight: 600 }}>DAYS</label>
-                  <input
-                    type="number" min="1" max="365"
-                    value={grantForm.days}
-                    onChange={e => setGrantForm(f => ({ ...f, days: e.target.value }))}
-                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 12px', color: '#f8fafc', fontSize: 13, width: 80 }}
-                  />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <label style={{ color: '#64748b', fontSize: 11, fontWeight: 600 }}>NOTE</label>
-                  <input
-                    placeholder="Admin note..."
-                    value={grantForm.note}
-                    onChange={e => setGrantForm(f => ({ ...f, note: e.target.value }))}
-                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 12px', color: '#f8fafc', fontSize: 13, width: 180 }}
-                  />
-                </div>
-                <button
-                  type="submit" disabled={grantLoading}
-                  style={{
-                    padding: '9px 20px', borderRadius: 8, border: 'none',
-                    background: 'rgba(168,85,247,0.3)', color: '#a855f7',
-                    fontWeight: 700, fontSize: 13, cursor: 'pointer',
-                  }}
-                >
-                  {grantLoading ? 'Granting…' : 'Grant Access'}
-                </button>
-              </form>
-              {grantMsg && <p style={{ color: grantMsg.startsWith('✅') ? '#4ade80' : '#f87171', fontSize: 13, marginTop: 10 }}>{grantMsg}</p>}
-            </div>
-
-            {/* Filter */}
-            <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center' }}>
-              <span style={{ color: '#64748b', fontSize: 12, fontWeight: 600 }}>FILTER:</span>
-              {['', 'active', 'expired', 'cancelled'].map(f => (
-                <button key={f || 'all'} onClick={() => setSubsFilter(f)}
-                  style={{
-                    padding: '4px 12px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)',
-                    background: subsFilter === f ? 'rgba(168,85,247,0.2)' : 'transparent',
-                    color: subsFilter === f ? '#a855f7' : '#64748b',
-                    fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                  }}
-                >
-                  {f || 'All'} ({f ? subs.filter(s => s.status === f).length : subsTotal})
-                </button>
-              ))}
-            </div>
-
-            {/* Table */}
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-                    {['User', 'Plan', 'Status', 'Gateway', 'Paid', 'Expires', 'Actions'].map(h => (
-                      <th key={h} style={{ padding: '10px 12px', textAlign: 'left', color: '#475569', fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {subs.map((s, i) => {
-                    const statusColor = s.status === 'active' ? '#4ade80' : s.status === 'expired' ? '#fbbf24' : '#f87171';
-                    const planColor   = s.plan === 'girls' ? '#ec4899' : s.plan === 'pro' ? '#a855f7' : '#64748b';
-                    const amountStr   = s.currency === 'INR'
-                      ? `₹${(s.amount / 100).toFixed(0)}`
-                      : s.grantedByAdmin ? 'Free'
-                      : `$${(s.amount / 100).toFixed(2)}`;
-                    return (
-                      <tr key={s._id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}>
-                        <td style={{ padding: '10px 12px' }}>
-                          <div style={{ color: '#f8fafc', fontWeight: 600 }}>{s.user?.displayName || s.user?.email || '—'}</div>
-                          <div style={{ color: '#334155', fontSize: 11, fontFamily: 'monospace' }}>{s.sessionId.slice(0, 10)}…</div>
-                        </td>
-                        <td style={{ padding: '10px 12px', color: planColor, fontWeight: 700, textTransform: 'capitalize' }}>{s.plan}</td>
-                        <td style={{ padding: '10px 12px' }}>
-                          <span style={{ color: statusColor, fontWeight: 700, textTransform: 'capitalize' }}>{s.status}</span>
-                          {s.grantedByAdmin && <span style={{ color: '#475569', fontSize: 10, marginLeft: 6 }}>admin</span>}
-                        </td>
-                        <td style={{ padding: '10px 12px', color: '#64748b', fontSize: 12 }}>{s.gateway}</td>
-                        <td style={{ padding: '10px 12px', color: '#94a3b8' }}>{amountStr}</td>
-                        <td style={{ padding: '10px 12px', color: '#64748b', fontSize: 12 }}>{formatDate(s.expiresAt)}</td>
-                        <td style={{ padding: '10px 12px' }}>
-                          <div style={{ display: 'flex', gap: 6 }}>
-                            <button onClick={() => handleExtendSub(s._id)}
-                              style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(74,222,128,0.3)', background: 'rgba(74,222,128,0.08)', color: '#4ade80', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>
-                              +Days
-                            </button>
-                            {s.status === 'active' && (
-                              <button onClick={() => handleCancelSub(s._id)}
-                                style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(248,113,113,0.3)', background: 'rgba(248,113,113,0.08)', color: '#f87171', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>
-                                Cancel
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              {subs.length === 0 && (
-                <p style={{ textAlign: 'center', color: '#334155', padding: 40, fontSize: 14 }}>No subscriptions found.</p>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* ── Tools Tab ── */}
+
         {tab === 'tools' && toolsData && (
           <div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 32 }}>
