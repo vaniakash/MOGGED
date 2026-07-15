@@ -6,16 +6,35 @@ const Subscription = require('../models/Subscription');
 
 const router = express.Router();
 
-// ── Two Razorpay instances ─────────────────────────────────────────────────
-const razorpayIN = new Razorpay({
-  key_id:     process.env.RAZORPAY_KEY_ID_IN,
-  key_secret: process.env.RAZORPAY_KEY_SECRET_IN,
-});
+// ── Two Razorpay instances (lazy — created on first use) ───────────────────
+let _razorpayIN   = null;
+let _razorpayINTL = null;
 
-const razorpayINTL = new Razorpay({
-  key_id:     process.env.RAZORPAY_KEY_ID_INTL,
-  key_secret: process.env.RAZORPAY_KEY_SECRET_INTL,
-});
+function getRazorpayIN() {
+  if (!_razorpayIN) {
+    if (!process.env.RAZORPAY_KEY_ID_IN || !process.env.RAZORPAY_KEY_SECRET_IN) {
+      throw new Error('Missing RAZORPAY_KEY_ID_IN / RAZORPAY_KEY_SECRET_IN env vars');
+    }
+    _razorpayIN = new Razorpay({
+      key_id:     process.env.RAZORPAY_KEY_ID_IN,
+      key_secret: process.env.RAZORPAY_KEY_SECRET_IN,
+    });
+  }
+  return _razorpayIN;
+}
+
+function getRazorpayINTL() {
+  if (!_razorpayINTL) {
+    if (!process.env.RAZORPAY_KEY_ID_INTL || !process.env.RAZORPAY_KEY_SECRET_INTL) {
+      throw new Error('Missing RAZORPAY_KEY_ID_INTL / RAZORPAY_KEY_SECRET_INTL env vars');
+    }
+    _razorpayINTL = new Razorpay({
+      key_id:     process.env.RAZORPAY_KEY_ID_INTL,
+      key_secret: process.env.RAZORPAY_KEY_SECRET_INTL,
+    });
+  }
+  return _razorpayINTL;
+}
 
 // ── Plan definitions ─────────────────────────────────────────────────────
 const PLANS = {
@@ -52,7 +71,7 @@ router.post('/create-order', async (req, res) => {
     if (!sessionId)             return res.status(400).json({ error: 'Missing sessionId' });
 
     const useIndia   = isIndia(country);
-    const razorpay   = useIndia ? razorpayIN : razorpayINTL;
+    const razorpay   = useIndia ? getRazorpayIN() : getRazorpayINTL();
     const planData   = PLANS[plan];
     const amount     = useIndia ? planData.amountINR : planData.amountUSD;
     const currency   = useIndia ? 'INR' : 'USD';
