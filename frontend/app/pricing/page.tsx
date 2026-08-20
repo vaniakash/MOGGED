@@ -12,8 +12,8 @@ const PLANS = [
     id: 'beginner',
     name: 'Beginner',
     tagline: 'Step into the arena. Prove your looks.',
-    price: '$2.99',
     priceINR: '₹249',
+    priceUSD: '$2.99',
     period: '/month',
     badge: null,
     color: '#00f5d4',
@@ -30,8 +30,8 @@ const PLANS = [
     id: 'premium',
     name: 'Premium',
     tagline: 'Serious fighters only. Dominate every match.',
-    price: '$4.99',
     priceINR: '₹419',
+    priceUSD: '$4.99',
     period: '/month',
     badge: 'MOST POPULAR',
     color: '#a855f7',
@@ -49,8 +49,8 @@ const PLANS = [
     id: 'pro',
     name: 'Pro',
     tagline: 'Built for the top 1%. The badge says it all.',
-    price: '$9.99',
     priceINR: '₹839',
+    priceUSD: '$9.99',
     period: '/month',
     badge: 'BEST VALUE',
     color: '#ff2d78',
@@ -287,6 +287,7 @@ export default function PricingPage() {
                   <div style={{ fontSize: 13, color: '#475569', marginBottom: 12, lineHeight: 1.5, fontStyle: 'italic' }}>
                     {(plan as any).tagline}
                   </div>
+                  {/* INR = primary big price */}
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
                     <span style={{
                       fontFamily: 'Bebas Neue, cursive',
@@ -294,12 +295,20 @@ export default function PricingPage() {
                       color: '#f8fafc',
                       lineHeight: 1,
                     }}>
-                      {plan.price}
+                      {plan.priceINR}
                     </span>
                     <span style={{ color: '#475569', fontSize: 14 }}>{plan.period}</span>
                   </div>
-                  <div style={{ color: '#334155', fontSize: 13, marginTop: 4 }}>
-                    {plan.priceINR}/month (billed in INR)
+                  {/* USD = small secondary reference */}
+                  <div style={{ color: '#334155', fontSize: 12, marginTop: 5, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: 6, padding: '2px 8px', fontSize: 11, color: '#475569',
+                    }}>
+                      ≈ {(plan as any).priceUSD} USD
+                    </span>
+                    <span style={{ color: '#1e293b' }}>· billed in INR via PayU</span>
                   </div>
                 </div>
 

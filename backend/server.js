@@ -398,6 +398,7 @@ app.get('/api/admin/analytics', requireAdmin, async (req, res) => {
     const [
       active1min, active5min, active1hr, active24hr, active7d,
       todayViews, weekViews, monthViews, totalViews,
+      pricingToday, pricingWeek, pricingMonth, pricingTotal,
       hourlyRaw, dailyRaw, countryRaw, topPagesRaw, planClicksRaw,
     ] = await Promise.all([
       PageView.distinct('sessionId', { ts: { $gte: last1min },  sessionId: { $ne: null } }).then(a => a.length),
@@ -409,6 +410,11 @@ app.get('/api/admin/analytics', requireAdmin, async (req, res) => {
       PageView.countDocuments({ ts: { $gte: startOfWeek } }),
       PageView.countDocuments({ ts: { $gte: startOfMonth } }),
       PageView.countDocuments(),
+      // /pricing page visits
+      PageView.countDocuments({ path: '/pricing', ts: { $gte: startOfToday } }),
+      PageView.countDocuments({ path: '/pricing', ts: { $gte: startOfWeek } }),
+      PageView.countDocuments({ path: '/pricing', ts: { $gte: startOfMonth } }),
+      PageView.countDocuments({ path: '/pricing' }),
       // Hourly chart: last 24 h
       PageView.aggregate([
         { $match: { ts: { $gte: last24hr } } },
@@ -452,6 +458,7 @@ app.get('/api/admin/analytics', requireAdmin, async (req, res) => {
 
     res.json({
       pageViews: { today: todayViews, week: weekViews, month: monthViews, total: totalViews },
+      pricingPageViews: { today: pricingToday, week: pricingWeek, month: pricingMonth, total: pricingTotal },
       active:    { last1min: active1min, last5min: active5min, last1hr: active1hr, last24hr: active24hr, last7d: active7d },
       hourly:    hourlyRaw.map(b => ({ label: `${String(b._id.h).padStart(2,'0')}:00`, views: b.views, users: (b.uniq||[]).filter(Boolean).length })),
       daily:     dailyRaw.map(b => ({ label: `${b._id.d}/${b._id.m}`, views: b.views, users: (b.uniq||[]).filter(Boolean).length })),

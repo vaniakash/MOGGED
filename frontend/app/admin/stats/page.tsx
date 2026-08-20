@@ -9,6 +9,7 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:400
 interface PlanClickStat { clicks: number; uniq: number; }
 interface Analytics {
   pageViews: { today: number; week: number; month: number; total: number };
+  pricingPageViews: { today: number; week: number; month: number; total: number };
   active:    { last1min: number; last5min: number; last1hr: number; last24hr: number; last7d: number };
   hourly:    { label: string; views: number; users: number }[];
   daily:     { label: string; views: number; users: number }[];
@@ -215,6 +216,28 @@ export default function AdminStatsPage() {
               <Card label="This Week" value={data.pageViews.week.toLocaleString()} color="#a855f7" sub="last 7 days" />
               <Card label="This Month" value={data.pageViews.month.toLocaleString()} color="#f59e0b" sub="since 1st" />
               <Card label="All Time" value={data.pageViews.total.toLocaleString()} color="#ff2d78" sub="last 90 days stored" />
+            </div>
+          </section>
+
+          {/* ── Pricing Page Visits ─────────────────────────────────────── */}
+          <section style={{ marginBottom: 36 }}>
+            <h2 style={{ fontSize: 13, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 14 }}>
+              💳 /pricing Page Visits
+            </h2>
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(251,191,36,0.06), rgba(168,85,247,0.06))',
+              border: '1px solid rgba(251,191,36,0.15)',
+              borderRadius: 16, padding: '20px 24px', marginBottom: 4,
+            }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                <Card label="Today" value={(data.pricingPageViews?.today ?? 0).toLocaleString()} color="#fbbf24" sub="since midnight" />
+                <Card label="This Week" value={(data.pricingPageViews?.week ?? 0).toLocaleString()} color="#fbbf24" sub="last 7 days" />
+                <Card label="This Month" value={(data.pricingPageViews?.month ?? 0).toLocaleString()} color="#fbbf24" sub="since 1st" />
+                <Card label="All Time" value={(data.pricingPageViews?.total ?? 0).toLocaleString()} color="#fbbf24" sub="last 90 days stored" />
+              </div>
+              <div style={{ marginTop: 14, fontSize: 12, color: '#334155' }}>
+                💡 Pricing visits vs plan clicks ratio shows your conversion funnel health.
+              </div>
             </div>
           </section>
 
