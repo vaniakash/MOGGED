@@ -3,6 +3,7 @@ const crypto  = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 const User         = require('../models/User');
 const Subscription = require('../models/Subscription');
+const PageView     = require('../models/PageView');
 
 const router = express.Router();
 
@@ -122,6 +123,22 @@ router.post('/initiate', async (req, res) => {
       currency: plan.currency,
       status: 'pending',
     });
+
+    // ✅ Server-side plan click tracking (guaranteed, never fails silently)
+    const ccountry = (
+      req.headers['cf-ipcountry'] ||
+      req.headers['x-country'] ||
+      req.headers['x-vercel-ip-country'] ||
+      'Unknown'
+    ).toUpperCase().slice(0, 2);
+    PageView.create({
+      path: `/pricing/click/${planId}`,
+      sessionId: sessionId || null,
+      country:     ccountry && ccountry !== 'XX' ? ccountry : 'Unknown',
+      countryName: ccountry || 'Unknown',
+      ip: req.headers['cf-connecting-ip'] || req.headers['x-forwarded-for']?.split(',')[0] || req.ip,
+      ua: (req.headers['user-agent'] || '').slice(0, 200),
+    }).catch(() => {});
 
     return res.json({
       key:         PAYU_KEY,

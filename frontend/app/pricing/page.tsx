@@ -370,7 +370,7 @@ export default function PricingPage() {
         {/* Footer notes */}
         <div style={{ textAlign: 'center', color: '#334155', fontSize: 13, lineHeight: 1.8 }}>
           <p>🔒 Secure payments via PayU • 30-day subscription • Cancel anytime</p>
-          <p>All prices in USD for display. Actual charge is in Indian Rupees (INR) via your PayU account.</p>
+          <p>All prices are in Indian Rupees (INR) · USD shown for reference only · Payment processed via PayU</p>
         </div>
       </div>
 
