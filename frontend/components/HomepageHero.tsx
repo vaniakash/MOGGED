@@ -56,7 +56,7 @@ interface UserProfile {
   };
 }
 
-type ModalStep = 'login' | 'profile' | null;
+type ModalStep = 'login' | 'profile' | 'arena-onboard' | null;
 
 export default function HomepageHero() {
   const router = useRouter();
@@ -78,6 +78,11 @@ export default function HomepageHero() {
   const [pNationality, setPNationality] = useState('');
   const [pAge, setPAge]                 = useState('');
   const [pGender, setPGender]           = useState('');
+
+  // Arena onboard state
+  const [onboardNationality, setOnboardNationality] = useState('');
+  const [onboardGender, setOnboardGender]           = useState('');
+  const [onboardSaving, setOnboardSaving]           = useState(false);
   const [pLoading, setPLoading]         = useState(false);
   const [pError, setPError]             = useState('');
 
@@ -180,9 +185,50 @@ export default function HomepageHero() {
     const hasActive = user.hasActiveSub === true ||
       (sub?.status === 'active' && sub?.expiryDate && new Date(sub.expiryDate) > new Date());
 
-    if (hasActive) {
+    // If profile complete and subscribed → go directly to battle
+    if (hasActive && user.profileComplete) {
       router.push('/battle');
-    } else {
+      return;
+    }
+
+    // If profile NOT complete → show profile form first
+    if (!user.profileComplete) {
+      setPUsername(user.displayName || '');
+      setPNationality(user.nationality || '');
+      setPAge('');
+      setPGender(user.gender || '');
+      setModalStep('profile');
+      return;
+    }
+
+    // Logged in, profile complete, NOT subscribed → show arena onboard modal
+    setOnboardNationality(user.nationality || '');
+    setOnboardGender(user.gender || '');
+    setModalStep('arena-onboard');
+  }
+
+  // ── Arena onboard: save profile updates + route ──────────────────────────
+  async function handleArenaOnboardContinue(wantsElo: boolean) {
+    setOnboardSaving(true);
+    try {
+      // Save nationality/gender if they were missing or updated
+      const sid = localStorage.getItem('omogl_session');
+      if (sid && (onboardNationality || onboardGender)) {
+        await fetch(`${BACKEND_URL}/api/profile`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId: sid,
+            username: user?.username || user?.displayName || '',
+            nationality: onboardNationality || user?.nationality || '',
+            age: user?.age || 18,
+            gender: onboardGender || user?.gender || '',
+          }),
+        }).catch(() => {});
+      }
+    } finally {
+      setOnboardSaving(false);
+      setModalStep(null);
       router.push('/pricing');
     }
   }
@@ -369,6 +415,113 @@ export default function HomepageHero() {
                     <a href="/privacy" style={{ color: '#a855f7' }}>Privacy Policy</a>.
                     We never store or sell your facial data.
                   </div>
+                </div>
+              )}
+
+              {/* ── STEP: ARENA ONBOARD (prize + profile confirm) ──────── */}
+              {modalStep === 'arena-onboard' && (
+                <div style={{ padding: '36px 32px 32px', position: 'relative' }}>
+                  {/* Prize banner */}
+                  <div style={{
+                    background: 'linear-gradient(135deg, rgba(251,191,36,0.12), rgba(168,85,247,0.12))',
+                    border: '1px solid rgba(251,191,36,0.3)',
+                    borderRadius: 16, padding: '18px 20px', marginBottom: 24, textAlign: 'center',
+                  }}>
+                    <div style={{ fontSize: 28, marginBottom: 6 }}>🏆</div>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: '#fbbf24', marginBottom: 4 }}>
+                      Monthly ELO Championship
+                    </div>
+                    <div style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.6 }}>
+                      Top ELO warriors earn real money every month:
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 10, flexWrap: 'wrap' }}>
+                      {[
+                        { rank: '🥇 1st', prize: '$150', color: '#fbbf24' },
+                        { rank: '🥈 2nd', prize: '$100', color: '#94a3b8' },
+                        { rank: '🥉 3rd', prize: '$80',  color: '#c97c2e' },
+                      ].map(p => (
+                        <div key={p.rank} style={{
+                          background: 'rgba(0,0,0,0.3)', borderRadius: 10,
+                          padding: '8px 14px', textAlign: 'center',
+                        }}>
+                          <div style={{ fontSize: 11, color: '#64748b' }}>{p.rank}</div>
+                          <div style={{ fontSize: 18, fontWeight: 800, color: p.color }}>{p.prize}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <h2 style={{ fontSize: 18, fontWeight: 800, color: '#f8fafc', marginBottom: 6, textAlign: 'center' }}>
+                    One Step Before the Arena
+                  </h2>
+                  <p style={{ fontSize: 13, color: '#64748b', textAlign: 'center', marginBottom: 20, lineHeight: 1.6 }}>
+                    Confirm your info to compete globally and unlock earnings.
+                  </p>
+
+                  {/* Nationality */}
+                  <div style={{ marginBottom: 14 }}>
+                    <label style={{ display: 'block', color: '#64748b', fontSize: 11, fontWeight: 700, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                      🌍 Nationality
+                    </label>
+                    <select
+                      value={onboardNationality}
+                      onChange={e => setOnboardNationality(e.target.value)}
+                      style={{ width: '100%', padding: '11px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', color: onboardNationality ? '#f8fafc' : '#64748b', fontSize: 13, outline: 'none', fontFamily: 'inherit' }}
+                    >
+                      <option value="">Select country…</option>
+                      {NATIONALITIES.map(n => <option key={n} value={n} style={{ background: '#0d0d14' }}>{n}</option>)}
+                    </select>
+                  </div>
+
+                  {/* Gender */}
+                  <div style={{ marginBottom: 22 }}>
+                    <label style={{ display: 'block', color: '#64748b', fontSize: 11, fontWeight: 700, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                      ⚡ Gender
+                    </label>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {['Male', 'Female', 'Other'].map(g => (
+                        <button
+                          key={g}
+                          type="button"
+                          onClick={() => setOnboardGender(g)}
+                          style={{
+                            flex: 1, padding: '10px 4px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                            border: onboardGender === g ? '1.5px solid #a855f7' : '1px solid rgba(255,255,255,0.1)',
+                            background: onboardGender === g ? 'rgba(168,85,247,0.15)' : 'rgba(255,255,255,0.03)',
+                            color: onboardGender === g ? '#a855f7' : '#64748b',
+                            transition: 'all 0.15s',
+                          }}
+                        >{g}</button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* CTAs */}
+                  <button
+                    onClick={() => handleArenaOnboardContinue(true)}
+                    disabled={onboardSaving}
+                    style={{
+                      width: '100%', padding: '14px 20px', borderRadius: 12, fontSize: 14,
+                      fontWeight: 800, cursor: 'pointer', marginBottom: 10,
+                      background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+                      border: 'none', color: '#0d0d14',
+                      boxShadow: '0 4px 20px rgba(251,191,36,0.3)',
+                    }}
+                  >
+                    {onboardSaving ? 'Saving…' : '🏆 Yes! I want to compete & earn →'}
+                  </button>
+                  <button
+                    onClick={() => handleArenaOnboardContinue(false)}
+                    disabled={onboardSaving}
+                    style={{
+                      width: '100%', padding: '12px 20px', borderRadius: 12, fontSize: 13,
+                      fontWeight: 600, cursor: 'pointer',
+                      background: 'transparent',
+                      border: '1px solid rgba(255,255,255,0.1)', color: '#475569',
+                    }}
+                  >
+                    Skip, just enter the arena →
+                  </button>
                 </div>
               )}
 

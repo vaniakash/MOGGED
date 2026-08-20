@@ -11,6 +11,7 @@ const PLANS = [
   {
     id: 'beginner',
     name: 'Beginner',
+    tagline: 'Step into the arena. Prove your looks.',
     price: '$2.99',
     priceINR: '₹249',
     period: '/month',
@@ -18,16 +19,17 @@ const PLANS = [
     color: '#00f5d4',
     glow: 'rgba(0,245,212,0.15)',
     features: [
-      '⚔️ Unlimited arena battles',
-      '📊 ELO ranking & leaderboard',
-      '🤖 AI face analysis every match',
-      '🏆 Win/Loss tracking',
+      '⚔️ Unlimited live arena battles',
+      '📊 ELO rank — climb the global ladder',
+      '🤖 AI scores your face every single round',
+      '🏆 Win/Loss record + monthly prize eligibility',
     ],
-    cta: 'Start Fighting',
+    cta: 'Enter The Arena →',
   },
   {
     id: 'premium',
     name: 'Premium',
+    tagline: 'Serious fighters only. Dominate every match.',
     price: '$4.99',
     priceINR: '₹419',
     period: '/month',
@@ -36,16 +38,17 @@ const PLANS = [
     glow: 'rgba(168,85,247,0.18)',
     features: [
       '⚔️ Everything in Beginner',
-      '📈 Detailed score breakdown',
-      '🔒 Private battle rooms',
-      '💬 Stranger chat mode',
-      '📸 Looksmax analysis tools',
+      '📈 Deep face score breakdown — know exactly why you won',
+      '🔒 Private battle rooms — challenge your friends',
+      '💬 Stranger chat after matches',
+      '📸 Looksmax AI — personalized glow-up roadmap',
     ],
-    cta: 'Go Premium',
+    cta: 'Go Premium →',
   },
   {
     id: 'pro',
     name: 'Pro',
+    tagline: 'Built for the top 1%. The badge says it all.',
     price: '$9.99',
     priceINR: '₹839',
     period: '/month',
@@ -54,13 +57,13 @@ const PLANS = [
     glow: 'rgba(255,45,120,0.15)',
     features: [
       '⚔️ Everything in Premium',
-      '🌟 Celebrity match analysis',
-      '🔥 Priority matchmaking',
-      '📊 Advanced ELO insights',
-      '🎯 Hunter Eyes precision test',
-      '👑 Pro badge on profile',
+      '🌟 Celebrity lookalike — see who you match',
+      '🔥 Priority queue — never wait for a match',
+      '📊 Advanced ELO graph + trend analysis',
+      '🎯 Hunter Eyes test — precision attraction scoring',
+      '👑 Exclusive Pro badge visible on leaderboard',
     ],
-    cta: 'Go Pro',
+    cta: 'Go Pro →',
   },
 ];
 
@@ -188,6 +191,48 @@ export default function PricingPage() {
           </motion.div>
         </div>
 
+        {/* 🏆 Monthly Championship Prize Banner */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.15 }}
+          style={{
+            background: 'linear-gradient(135deg, rgba(251,191,36,0.08) 0%, rgba(168,85,247,0.08) 100%)',
+            border: '1px solid rgba(251,191,36,0.25)',
+            borderRadius: 20, padding: '24px 28px', marginBottom: 40,
+            display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap',
+            justifyContent: 'center',
+          }}
+        >
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 32, marginBottom: 4 }}>🏆</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#fbbf24', marginBottom: 2 }}>
+              Monthly ELO Championship
+            </div>
+            <div style={{ fontSize: 12, color: '#64748b' }}>
+              Top ranked fighters earn real prizes every month
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+            {[
+              { rank: '🥇 1st Place', prize: '$150 USD', color: '#fbbf24', bg: 'rgba(251,191,36,0.1)' },
+              { rank: '🥈 2nd Place', prize: '$100 USD', color: '#94a3b8', bg: 'rgba(148,163,184,0.1)' },
+              { rank: '🥉 3rd Place', prize: '$80 USD',  color: '#c97c2e', bg: 'rgba(201,124,46,0.1)' },
+            ].map(p => (
+              <div key={p.rank} style={{
+                background: p.bg, border: `1px solid ${p.color}44`,
+                borderRadius: 14, padding: '12px 20px', textAlign: 'center', minWidth: 110,
+              }}>
+                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>{p.rank}</div>
+                <div style={{ fontSize: 20, fontWeight: 900, color: p.color }}>{p.prize}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ fontSize: 11, color: '#334155', textAlign: 'center', width: '100%' }}>
+            Any active plan qualifies you for the monthly championship · Winners paid via PayPal/UPI
+          </div>
+        </motion.div>
+
         {/* Plan Cards */}
         <div style={{
           display: 'grid',
@@ -232,12 +277,15 @@ export default function PricingPage() {
 
               <div style={{ padding: '32px 28px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                 {/* Plan name & price */}
-                <div style={{ marginBottom: 28 }}>
+                <div style={{ marginBottom: 24 }}>
                   <div style={{
                     fontSize: 12, fontWeight: 700, color: plan.color,
-                    letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10,
+                    letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6,
                   }}>
                     {plan.name}
+                  </div>
+                  <div style={{ fontSize: 13, color: '#475569', marginBottom: 12, lineHeight: 1.5, fontStyle: 'italic' }}>
+                    {(plan as any).tagline}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
                     <span style={{
