@@ -46,6 +46,14 @@ interface UserProfile {
   nationality?: string;
   age?: number;
   gender?: string;
+  hasActiveSub?: boolean;
+  subscription?: {
+    status: string;
+    planId: string | null;
+    planName: string | null;
+    expiryDate: string | null;
+    startDate: string | null;
+  };
 }
 
 type ModalStep = 'login' | 'profile' | null;
