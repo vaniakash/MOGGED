@@ -66,4 +66,32 @@ router.post('/pageview', async (req, res) => {
   }
 });
 
+// POST /api/track/plan-click  — called when a user clicks a pricing plan button
+router.post('/plan-click', async (req, res) => {
+  try {
+    const { planId, sessionId } = req.body;
+    if (!planId) return res.json({ ok: false });
+
+    const countryCode = (
+      req.headers['cf-ipcountry'] ||
+      req.headers['x-country'] ||
+      'Unknown'
+    ).toUpperCase().slice(0, 2);
+
+    // Store as a special page view event on the path /pricing/click/<planId>
+    await PageView.create({
+      path: `/pricing/click/${planId}`,
+      sessionId: sessionId || null,
+      country:     countryCode !== 'XX' ? countryCode : 'Unknown',
+      countryName: COUNTRY_NAMES[countryCode] || countryCode,
+      ip: req.headers['cf-connecting-ip'] || req.headers['x-forwarded-for']?.split(',')[0] || req.ip,
+      ua: (req.headers['user-agent'] || '').slice(0, 200),
+    });
+
+    return res.json({ ok: true });
+  } catch (e) {
+    return res.json({ ok: false, error: e.message });
+  }
+});
+
 module.exports = router;

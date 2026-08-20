@@ -398,7 +398,7 @@ app.get('/api/admin/analytics', requireAdmin, async (req, res) => {
     const [
       active1min, active5min, active1hr, active24hr, active7d,
       todayViews, weekViews, monthViews, totalViews,
-      hourlyRaw, dailyRaw, countryRaw, topPagesRaw,
+      hourlyRaw, dailyRaw, countryRaw, topPagesRaw, planClicksRaw,
     ] = await Promise.all([
       PageView.distinct('sessionId', { ts: { $gte: last1min },  sessionId: { $ne: null } }).then(a => a.length),
       PageView.distinct('sessionId', { ts: { $gte: last5min },  sessionId: { $ne: null } }).then(a => a.length),
@@ -427,13 +427,28 @@ app.get('/api/admin/analytics', requireAdmin, async (req, res) => {
         { $group: { _id: '$country', name: { $first: '$countryName' }, views: { $sum: 1 } } },
         { $sort: { views: -1 } }, { $limit: 20 },
       ]),
-      // Top pages
+      // Top pages (exclude plan click events)
       PageView.aggregate([
-        { $match: { ts: { $gte: last30d } } },
+        { $match: { ts: { $gte: last30d }, path: { $not: /^\/pricing\/click\// } } },
         { $group: { _id: '$path', views: { $sum: 1 } } },
         { $sort: { views: -1 } }, { $limit: 10 },
       ]),
+      // Plan click counts (all time)
+      PageView.aggregate([
+        { $match: { path: { $regex: '^/pricing/click/' } } },
+        { $group: { _id: '$path', clicks: { $sum: 1 }, uniq: { $addToSet: '$sessionId' } } },
+        { $sort: { clicks: -1 } },
+      ]),
     ]);
+
+    // Build plan clicks map: { beginner: {clicks, uniq}, premium: ..., pro: ... }
+    const planClickMap = { beginner: { clicks: 0, uniq: 0 }, premium: { clicks: 0, uniq: 0 }, pro: { clicks: 0, uniq: 0 } };
+    planClicksRaw.forEach(r => {
+      const planId = r._id.replace('/pricing/click/', '');
+      if (planClickMap[planId] !== undefined) {
+        planClickMap[planId] = { clicks: r.clicks, uniq: (r.uniq || []).filter(Boolean).length };
+      }
+    });
 
     res.json({
       pageViews: { today: todayViews, week: weekViews, month: monthViews, total: totalViews },
@@ -442,6 +457,7 @@ app.get('/api/admin/analytics', requireAdmin, async (req, res) => {
       daily:     dailyRaw.map(b => ({ label: `${b._id.d}/${b._id.m}`, views: b.views, users: (b.uniq||[]).filter(Boolean).length })),
       countries: countryRaw.map(c => ({ code: c._id, name: c.name || c._id, views: c.views })),
       topPages:  topPagesRaw.map(p => ({ path: p._id, views: p.views })),
+      planClicks: planClickMap,
     });
   } catch (e) {
     console.error('[admin/analytics]', e.message);

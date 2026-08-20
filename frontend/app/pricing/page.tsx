@@ -100,6 +100,12 @@ export default function PricingPage() {
     }
     setInitiating(planId);
     setError('');
+    // 🔥 Track which plan was clicked (fire-and-forget, non-blocking)
+    fetch(`${BACKEND_URL}/api/track/plan-click`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ planId, sessionId }),
+    }).catch(() => {});
     try {
       const res = await fetch(`${BACKEND_URL}/api/payment/initiate`, {
         method: 'POST',

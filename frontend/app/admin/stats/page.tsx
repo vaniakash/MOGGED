@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
+interface PlanClickStat { clicks: number; uniq: number; }
 interface Analytics {
   pageViews: { today: number; week: number; month: number; total: number };
   active:    { last1min: number; last5min: number; last1hr: number; last24hr: number; last7d: number };
@@ -13,6 +14,7 @@ interface Analytics {
   daily:     { label: string; views: number; users: number }[];
   countries: { code: string; name: string; views: number }[];
   topPages:  { path: string; views: number }[];
+  planClicks: { beginner: PlanClickStat; premium: PlanClickStat; pro: PlanClickStat };
 }
 
 // ── Tiny bar-chart component (no dependencies) ────────────────────────────────
@@ -350,6 +352,67 @@ export default function AdminStatsPage() {
               )}
             </div>
           </div>
+
+          {/* Plan Interest */}
+            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: '20px', gridColumn: '1 / -1' }}>
+              <h2 style={{ fontSize: 13, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 20 }}>
+                💳 Plan Interest (all time — clicks on pricing buttons)
+              </h2>
+              {(() => {
+                const plans = [
+                  { id: 'beginner', label: 'Beginner',  price: '$2.99', color: '#00f5d4', emoji: '⚔️' },
+                  { id: 'premium',  label: 'Premium',   price: '$4.99', color: '#a855f7', emoji: '👑' },
+                  { id: 'pro',      label: 'Pro',       price: '$9.99', color: '#f43f5e', emoji: '🔥' },
+                ];
+                const pc = data.planClicks || { beginner:{clicks:0,uniq:0}, premium:{clicks:0,uniq:0}, pro:{clicks:0,uniq:0} };
+                const maxClicks = Math.max(...plans.map(p => pc[p.id as keyof typeof pc]?.clicks || 0), 1);
+                const total = plans.reduce((s, p) => s + (pc[p.id as keyof typeof pc]?.clicks || 0), 0);
+                return (
+                  <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                    {plans.map(plan => {
+                      const stat = pc[plan.id as keyof typeof pc] || { clicks: 0, uniq: 0 };
+                      const pct  = Math.round((stat.clicks / maxClicks) * 100);
+                      const share = total > 0 ? Math.round((stat.clicks / total) * 100) : 0;
+                      return (
+                        <div key={plan.id} style={{
+                          flex: 1, minWidth: 180,
+                          background: `rgba(${plan.color === '#a855f7' ? '168,85,247' : plan.color === '#00f5d4' ? '0,245,212' : '244,63,94'},0.07)`,
+                          border: `1px solid ${plan.color}33`,
+                          borderRadius: 14, padding: '18px 20px',
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                            <div>
+                              <div style={{ fontSize: 11, color: '#475569', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                {plan.emoji} {plan.label}
+                              </div>
+                              <div style={{ fontSize: 22, fontWeight: 800, color: plan.color, marginTop: 4 }}>
+                                {stat.clicks.toLocaleString()}
+                              </div>
+                              <div style={{ fontSize: 11, color: '#475569', marginTop: 2 }}>total clicks</div>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                              <div style={{ fontSize: 18, fontWeight: 700, color: '#f8fafc' }}>{share}%</div>
+                              <div style={{ fontSize: 11, color: '#475569' }}>share</div>
+                            </div>
+                          </div>
+                          <div style={{ height: 6, background: 'rgba(255,255,255,0.05)', borderRadius: 99, overflow: 'hidden', marginBottom: 10 }}>
+                            <div style={{
+                              height: '100%', width: `${pct}%`,
+                              background: `linear-gradient(90deg, ${plan.color}, ${plan.color}88)`,
+                              borderRadius: 99,
+                              transition: 'width 0.6s ease',
+                            }} />
+                          </div>
+                          <div style={{ fontSize: 12, color: '#475569' }}>
+                            👤 {stat.uniq.toLocaleString()} unique users
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
 
           {/* Footer note */}
           <p style={{ color: '#1e293b', fontSize: 11, textAlign: 'center' }}>
