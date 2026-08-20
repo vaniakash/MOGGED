@@ -76,7 +76,8 @@ export default function SignupPage() {
       const data = await res.json();
       localStorage.setItem('omogl_session', data.sessionId);
       localStorage.setItem('omogl_user', JSON.stringify(data.user));
-      router.push('/');
+      window.dispatchEvent(new StorageEvent('storage', { key: 'omogl_user', newValue: JSON.stringify(data.user) }));
+      router.push('/pricing');
     } catch (e: any) { setError(e.message); }
     finally { setLoading(false); }
   }

@@ -42,7 +42,7 @@ export default function LoginPage() {
       localStorage.setItem('omogl_user', JSON.stringify(data.user));
       window.dispatchEvent(new StorageEvent('storage', { key: 'omogl_user', newValue: JSON.stringify(data.user) }));
       setSuccess(true);
-      const redirect = new URLSearchParams(window.location.search).get('redirect') || '/';
+      const redirect = new URLSearchParams(window.location.search).get('redirect') || '/pricing';
       setTimeout(() => router.push(redirect), 1000);
     } catch (e: any) { setError(e.message || 'Something went wrong'); }
     finally { setLoading(false); }
@@ -66,7 +66,7 @@ export default function LoginPage() {
       localStorage.setItem('omogl_user', JSON.stringify(data.user));
       window.dispatchEvent(new StorageEvent('storage', { key: 'omogl_user', newValue: JSON.stringify(data.user) }));
       setSuccess(true);
-      const redirect = new URLSearchParams(window.location.search).get('redirect') || '/';
+      const redirect = new URLSearchParams(window.location.search).get('redirect') || '/pricing';
       setTimeout(() => router.push(redirect), 1000);
     } catch { setError('Network error. Please try again.'); }
     finally { setLoading(false); }
@@ -124,7 +124,7 @@ export default function LoginPage() {
                 </div>
               ))}
             </div>
-            <button onClick={() => router.push('/')} style={{ width: '100%', padding: '14px', borderRadius: 99, background: 'linear-gradient(135deg, #a855f7, #7c3aed)', border: 'none', color: '#fff', fontWeight: 700, fontSize: 15, cursor: 'pointer', marginBottom: 12 }}>⚔️ Go to Arena</button>
+            <button onClick={() => router.push('/pricing')} style={{ width: '100%', padding: '14px', borderRadius: 99, background: 'linear-gradient(135deg, #a855f7, #7c3aed)', border: 'none', color: '#fff', fontWeight: 700, fontSize: 15, cursor: 'pointer', marginBottom: 12 }}>⚔️ Go to Arena</button>
             <button onClick={signOut} style={{ width: '100%', padding: '12px', borderRadius: 99, background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#64748b', fontSize: 14, cursor: 'pointer' }}>Sign out</button>
           </>
         ) : (

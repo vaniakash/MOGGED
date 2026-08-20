@@ -275,6 +275,7 @@ export default function AdminDashboardPage() {
           borderRadius: 12, padding: 4,
           width: 'fit-content',
           flexWrap: 'wrap',
+          alignItems: 'center',
         }}>
           {(['overview', 'users', 'matches', 'tools'] as Tab[]).map(t => (
             <button
@@ -295,6 +296,21 @@ export default function AdminDashboardPage() {
               {t === 'overview' ? '📊 Overview' : t === 'users' ? '👥 Users' : t === 'matches' ? '⚔️ Matches' : '🔬 Tools'}
             </button>
           ))}
+          <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.1)', margin: '0 8px' }} />
+          <button
+            onClick={() => router.push('/admin/stats')}
+            style={{
+              padding: '8px 20px', borderRadius: 8, border: 'none',
+              background: 'rgba(0, 245, 212, 0.1)',
+              color: '#00f5d4',
+              fontWeight: 700,
+              fontSize: 13, cursor: 'pointer',
+              fontFamily: 'inherit',
+              transition: 'all 0.15s',
+            }}
+          >
+            📈 Full Analytics ↗
+          </button>
         </div>
 
         {/* ── Overview Tab ── */}

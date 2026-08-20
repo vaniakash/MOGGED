@@ -46,6 +46,8 @@ function randomToken() {
 }
 
 function buildUserResponse(user) {
+  const sub = user.subscription || {};
+  const hasActiveSub = sub.status === 'active' && sub.expiryDate && new Date(sub.expiryDate) > new Date();
   return {
     email:           user.email,
     displayName:     user.displayName,
@@ -61,6 +63,14 @@ function buildUserResponse(user) {
     nationality:     user.nationality,
     age:             user.age,
     gender:          user.gender,
+    subscription: {
+      status:     sub.status || 'none',
+      planId:     sub.planId || null,
+      planName:   sub.planName || null,
+      expiryDate: sub.expiryDate || null,
+      startDate:  sub.startDate || null,
+    },
+    hasActiveSub,
   };
 }
 

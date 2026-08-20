@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { Camera, Crosshair, ScanFace, Skull, X } from 'lucide-react';
+import { useAuth } from '@/lib/auth';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -142,8 +143,11 @@ export default function HomepageHero() {
         setModalStep('profile');
       } else {
         setModalStep(null);
-        // If they were trying to enter arena, go now
-        router.push('/battle');
+        // Check subscription then route accordingly
+        const sub = data.user.subscription;
+        const hasActive = data.user.hasActiveSub === true ||
+          (sub?.status === 'active' && sub?.expiryDate && new Date(sub.expiryDate) > new Date());
+        router.push(hasActive ? '/battle' : '/pricing');
       }
     } catch (err: any) {
       setSignInError('Sign-in failed. Please try again.');
@@ -152,11 +156,27 @@ export default function HomepageHero() {
     }
   }
 
-  // ── Enter Arena click — zero friction, instant entry ─────────────────────
+  // ── Enter Arena click — guarded flow ─────────────────────────────────────
   function handleEnterArena() {
     // Fire-and-forget: track the arena button press
     fetch(`${BACKEND_URL}/api/arena/press`, { method: 'POST' }).catch(() => {});
-    router.push('/battle');
+
+    if (!user) {
+      // Not logged in → send to login, then to pricing
+      router.push('/login?redirect=/pricing');
+      return;
+    }
+
+    // Check subscription using auth context
+    const sub = user.subscription;
+    const hasActive = user.hasActiveSub === true ||
+      (sub?.status === 'active' && sub?.expiryDate && new Date(sub.expiryDate) > new Date());
+
+    if (hasActive) {
+      router.push('/battle');
+    } else {
+      router.push('/pricing');
+    }
   }
 
   // ── Stranger Love click ─────────────────────────────────────────────────
@@ -195,7 +215,11 @@ export default function HomepageHero() {
       // Notify AuthProvider — storage event only fires cross-tab, so dispatch manually
       window.dispatchEvent(new StorageEvent('storage', { key: 'omogl_user', newValue: JSON.stringify(updatedUser) }));
       setModalStep(null);
-      router.push('/battle');
+      // Route to battle if subscribed, else pricing
+      const sub = updatedUser.subscription;
+      const hasActive = updatedUser.hasActiveSub === true ||
+        (sub?.status === 'active' && sub?.expiryDate && new Date(sub.expiryDate) > new Date());
+      router.push(hasActive ? '/battle' : '/pricing');
     } catch (err: any) {
       setPError(err.message || 'Something went wrong');
     } finally {

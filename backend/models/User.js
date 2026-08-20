@@ -27,6 +27,18 @@ const UserSchema = new mongoose.Schema({
   nationality:     { type: String, default: null },
   age:             { type: Number, default: null },
   gender:          { type: String, default: null }, // 'male'|'female'|'other'|'prefer_not'
+  // Subscription
+  subscription: {
+    planId:     { type: String, default: null },      // 'beginner' | 'premium' | 'pro'
+    planName:   { type: String, default: null },
+    paymentId:  { type: String, default: null },      // PayU mihpayid
+    txnId:      { type: String, default: null },      // our generated txnid
+    status:     { type: String, default: 'none' },    // 'none' | 'active' | 'expired'
+    startDate:  { type: Date,   default: null },
+    expiryDate: { type: Date,   default: null },
+    amountPaid: { type: Number, default: null },
+    currency:   { type: String, default: null },
+  },
   // Timestamps
   createdAt:       { type: Date, default: Date.now },
   lastSeen:        { type: Date, default: Date.now },

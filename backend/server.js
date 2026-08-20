@@ -163,6 +163,16 @@ app.post('/api/auth/google', async (req, res) => {
         nationality:     user.nationality || '',
         age:             user.age || null,
         gender:          user.gender || '',
+        subscription: {
+          status:     user.subscription?.status || 'none',
+          planId:     user.subscription?.planId || null,
+          planName:   user.subscription?.planName || null,
+          expiryDate: user.subscription?.expiryDate || null,
+          startDate:  user.subscription?.startDate || null,
+        },
+        hasActiveSub: user.subscription?.status === 'active' &&
+          user.subscription?.expiryDate &&
+          new Date(user.subscription.expiryDate) > new Date(),
       },
     });
   } catch (err) {
@@ -205,8 +215,18 @@ app.get('/api/me', async (req, res) => {
   if (!sessionId) return res.status(400).json({ error: 'Missing sessionId' });
   try {
     const user = await User.findOne({ sessionId })
-      .select('sessionId googleId email displayName photoURL elo wins losses matches profileComplete username nationality age gender provider');
+      .select('sessionId googleId email displayName photoURL elo wins losses matches profileComplete username nationality age gender provider subscription');
     if (!user) return res.status(404).json({ error: 'User not found' });
+
+    // Auto-expire subscription if past expiry date
+    const sub = user.subscription || {};
+    if (sub.status === 'active' && sub.expiryDate && new Date(sub.expiryDate) <= new Date()) {
+      await User.findOneAndUpdate({ sessionId }, { $set: { 'subscription.status': 'expired' } });
+      sub.status = 'expired';
+    }
+
+    const hasActiveSub = sub.status === 'active' && sub.expiryDate && new Date(sub.expiryDate) > new Date();
+
     return res.json({
       sessionId: user.sessionId,
       user: {
@@ -223,6 +243,14 @@ app.get('/api/me', async (req, res) => {
         nationality:     user.nationality || '',
         age:             user.age || null,
         gender:          user.gender || '',
+        subscription: {
+          status:     sub.status || 'none',
+          planId:     sub.planId || null,
+          planName:   sub.planName || null,
+          expiryDate: sub.expiryDate || null,
+          startDate:  sub.startDate || null,
+        },
+        hasActiveSub,
       },
     });
   } catch (e) {
@@ -237,6 +265,7 @@ const asyncDuelRoute      = require('./routes/asyncDuel');
 const glowUpRoute         = require('./routes/glowUp');
 const streakRoute         = require('./routes/streak');
 const authEmailRoute      = require('./routes/authEmail');
+const paymentRoute        = require('./routes/payment');
 const { startCron }       = require('./cron/dailyReset');
 
 app.use('/api/face-score', faceScoreRoute);
@@ -245,6 +274,7 @@ app.use('/api/duel/async', asyncDuelRoute);
 app.use('/api/glow-up', glowUpRoute);
 app.use('/api/streak', streakRoute);
 app.use('/api/auth/email', authEmailRoute);
+app.use('/api/payment', paymentRoute);
 
 // Start cron for daily streak resets
 startCron();
@@ -336,6 +366,8 @@ app.get('/api/admin/arena-stats', requireAdmin, (req, res) => {
 // Admin Tools endpoint
 const FaceScore = require('./models/FaceScore');
 const Credit    = require('./models/Credit');
+const PageView  = require('./models/PageView');
+
 app.get('/api/admin/tools', requireAdmin, async (req, res) => {
   try {
     const [faceScores, credits] = await Promise.all([
@@ -347,6 +379,108 @@ app.get('/api/admin/tools', requireAdmin, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// ── Admin Analytics ────────────────────────────────────────────────────────
+app.get('/api/admin/analytics', requireAdmin, async (req, res) => {
+  try {
+    const now = new Date();
+    const startOfToday = new Date(now); startOfToday.setHours(0,0,0,0);
+    const last1min  = new Date(now.getTime() - 60_000);
+    const last5min  = new Date(now.getTime() - 5 * 60_000);
+    const last1hr   = new Date(now.getTime() - 60 * 60_000);
+    const last24hr  = new Date(now.getTime() - 24 * 60 * 60_000);
+    const last7d    = new Date(now.getTime() - 7 * 24 * 60 * 60_000);
+    const last30d   = new Date(now.getTime() - 30 * 24 * 60 * 60_000);
+
+    const startOfWeek  = new Date(now); startOfWeek.setDate(now.getDate() - 6); startOfWeek.setHours(0,0,0,0);
+    const startOfMonth = new Date(now); startOfMonth.setDate(1); startOfMonth.setHours(0,0,0,0);
+
+    const [
+      active1min, active5min, active1hr, active24hr, active7d,
+      todayViews, weekViews, monthViews, totalViews,
+      hourlyRaw, dailyRaw, countryRaw, topPagesRaw,
+    ] = await Promise.all([
+      PageView.distinct('sessionId', { ts: { $gte: last1min },  sessionId: { $ne: null } }).then(a => a.length),
+      PageView.distinct('sessionId', { ts: { $gte: last5min },  sessionId: { $ne: null } }).then(a => a.length),
+      PageView.distinct('sessionId', { ts: { $gte: last1hr },   sessionId: { $ne: null } }).then(a => a.length),
+      PageView.distinct('sessionId', { ts: { $gte: last24hr },  sessionId: { $ne: null } }).then(a => a.length),
+      PageView.distinct('sessionId', { ts: { $gte: last7d },    sessionId: { $ne: null } }).then(a => a.length),
+      PageView.countDocuments({ ts: { $gte: startOfToday } }),
+      PageView.countDocuments({ ts: { $gte: startOfWeek } }),
+      PageView.countDocuments({ ts: { $gte: startOfMonth } }),
+      PageView.countDocuments(),
+      // Hourly chart: last 24 h
+      PageView.aggregate([
+        { $match: { ts: { $gte: last24hr } } },
+        { $group: { _id: { y: { $year: '$ts' }, m: { $month: '$ts' }, d: { $dayOfMonth: '$ts' }, h: { $hour: '$ts' } }, views: { $sum: 1 }, uniq: { $addToSet: '$sessionId' } } },
+        { $sort: { '_id.y': 1, '_id.m': 1, '_id.d': 1, '_id.h': 1 } },
+      ]),
+      // Daily chart: last 30 days
+      PageView.aggregate([
+        { $match: { ts: { $gte: last30d } } },
+        { $group: { _id: { y: { $year: '$ts' }, m: { $month: '$ts' }, d: { $dayOfMonth: '$ts' } }, views: { $sum: 1 }, uniq: { $addToSet: '$sessionId' } } },
+        { $sort: { '_id.y': 1, '_id.m': 1, '_id.d': 1 } },
+      ]),
+      // Country breakdown
+      PageView.aggregate([
+        { $match: { ts: { $gte: last30d }, country: { $ne: 'Unknown' } } },
+        { $group: { _id: '$country', name: { $first: '$countryName' }, views: { $sum: 1 } } },
+        { $sort: { views: -1 } }, { $limit: 20 },
+      ]),
+      // Top pages
+      PageView.aggregate([
+        { $match: { ts: { $gte: last30d } } },
+        { $group: { _id: '$path', views: { $sum: 1 } } },
+        { $sort: { views: -1 } }, { $limit: 10 },
+      ]),
+    ]);
+
+    res.json({
+      pageViews: { today: todayViews, week: weekViews, month: monthViews, total: totalViews },
+      active:    { last1min: active1min, last5min: active5min, last1hr: active1hr, last24hr: active24hr, last7d: active7d },
+      hourly:    hourlyRaw.map(b => ({ label: `${String(b._id.h).padStart(2,'0')}:00`, views: b.views, users: (b.uniq||[]).filter(Boolean).length })),
+      daily:     dailyRaw.map(b => ({ label: `${b._id.d}/${b._id.m}`, views: b.views, users: (b.uniq||[]).filter(Boolean).length })),
+      countries: countryRaw.map(c => ({ code: c._id, name: c.name || c._id, views: c.views })),
+      topPages:  topPagesRaw.map(p => ({ path: p._id, views: p.views })),
+    });
+  } catch (e) {
+    console.error('[admin/analytics]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── Page View Tracking ─────────────────────────────────────────────────────
+const COUNTRY_NAMES = {
+  IN:'India',US:'United States',GB:'United Kingdom',DE:'Germany',FR:'France',
+  AU:'Australia',CA:'Canada',SG:'Singapore',JP:'Japan',BR:'Brazil',NG:'Nigeria',
+  PK:'Pakistan',BD:'Bangladesh',NP:'Nepal',PH:'Philippines',ID:'Indonesia',
+  MY:'Malaysia',TH:'Thailand',AE:'UAE',SA:'Saudi Arabia',EG:'Egypt',KE:'Kenya',
+  ZA:'South Africa',RU:'Russia',CN:'China',KR:'South Korea',TR:'Turkey',
+  IT:'Italy',ES:'Spain',MX:'Mexico',AR:'Argentina',CO:'Colombia',VN:'Vietnam',
+  UA:'Ukraine',PL:'Poland',NL:'Netherlands',SE:'Sweden',NO:'Norway',
+};
+
+app.post('/api/track/pageview', async (req, res) => {
+  try {
+    const { path, sessionId } = req.body;
+    if (!path || path.startsWith('/api') || path.startsWith('/_next')) return res.json({ ok: true });
+    const countryCode = (req.headers['cf-ipcountry'] || req.headers['x-country'] || 'Unknown').toUpperCase().slice(0,2);
+    const countryName = COUNTRY_NAMES[countryCode] || countryCode;
+    const ip = req.headers['cf-connecting-ip'] || (req.headers['x-forwarded-for']||'').split(',')[0] || req.ip;
+    await PageView.create({
+      path,
+      sessionId: sessionId || null,
+      country:     countryCode !== 'XX' && countryCode !== 'Un' ? countryCode : 'Unknown',
+      countryName: countryCode !== 'XX' && countryCode !== 'Un' ? countryName : 'Unknown',
+      ip,
+      ua: (req.headers['user-agent'] || '').slice(0, 200),
+    });
+    return res.json({ ok: true });
+  } catch (e) {
+    return res.json({ ok: false });
+  }
+});
+
 
 // ── Leaderboard ────────────────────────────────────────────────────────────
 app.get('/api/leaderboard', async (_, res) => {

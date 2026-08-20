@@ -20,6 +20,14 @@ export interface AuthUser {
   nationality?: string;
   age?: number;
   gender?: string;
+  hasActiveSub?: boolean;
+  subscription?: {
+    status: string;         // 'none' | 'active' | 'expired'
+    planId: string | null;
+    planName: string | null;
+    expiryDate: string | null;
+    startDate: string | null;
+  };
 }
 
 interface AuthContextType {
@@ -28,6 +36,7 @@ interface AuthContextType {
   isLoading: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => void;
+  hasActiveSub: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -36,7 +45,9 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   signInWithGoogle: async () => {},
   signOut: () => {},
+  hasActiveSub: () => false,
 });
+
 
 export function useAuth() {
   return useContext(AuthContext);
@@ -161,8 +172,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const hasActiveSub = useCallback(() => {
+    if (!user) return false;
+    if (user.hasActiveSub === true) return true;
+    const sub = user.subscription;
+    if (!sub || sub.status !== 'active' || !sub.expiryDate) return false;
+    return new Date(sub.expiryDate) > new Date();
+  }, [user]);
+
   return (
-    <AuthContext.Provider value={{ user, sessionId, isLoading, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, sessionId, isLoading, signInWithGoogle, signOut, hasActiveSub }}>
       {children}
     </AuthContext.Provider>
   );
