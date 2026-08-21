@@ -103,12 +103,25 @@ export default function PricingPage() {
     }
     setInitiating(planId);
     setError('');
-    // 🔥 Track which plan was clicked (fire-and-forget, non-blocking)
-    fetch(`${BACKEND_URL}/api/track/plan-click`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ planId, sessionId }),
-    }).catch(() => {});
+    // ✅ Track plan click — keepalive:true ensures it survives page unload/navigation
+    // sendBeacon is the most reliable fallback for analytics during page transitions
+    try {
+      const trackPayload = JSON.stringify({ planId, sessionId });
+      const trackUrl = `${BACKEND_URL}/api/track/plan-click`;
+      if (navigator.sendBeacon) {
+        // sendBeacon: fire-and-forget, guaranteed to complete even during unload
+        const blob = new Blob([trackPayload], { type: 'application/json' });
+        navigator.sendBeacon(trackUrl, blob);
+      } else {
+        // keepalive: fetch stays alive even after page navigates away
+        fetch(trackUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: trackPayload,
+          keepalive: true,
+        }).catch(() => {});
+      }
+    } catch {}
     try {
       const res = await fetch(`${BACKEND_URL}/api/payment/initiate`, {
         method: 'POST',

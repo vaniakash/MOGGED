@@ -67,10 +67,16 @@ router.post('/pageview', async (req, res) => {
 });
 
 // POST /api/track/plan-click  — called when a user clicks a pricing plan button
+// Handles both application/json (fetch) and text/plain (navigator.sendBeacon)
 router.post('/plan-click', async (req, res) => {
   try {
-    const { planId, sessionId } = req.body;
-    if (!planId) return res.json({ ok: false });
+    // sendBeacon may send body as text/plain — parse it if needed
+    let body = req.body;
+    if (typeof body === 'string') {
+      try { body = JSON.parse(body); } catch { body = {}; }
+    }
+    const { planId, sessionId } = body || {};
+    if (!planId) return res.json({ ok: false, reason: 'no planId' });
 
     const countryCode = (
       req.headers['cf-ipcountry'] ||
@@ -88,8 +94,10 @@ router.post('/plan-click', async (req, res) => {
       ua: (req.headers['user-agent'] || '').slice(0, 200),
     });
 
+    console.log(`[track/plan-click] ✅ planId=${planId} sessionId=${sessionId?.slice(0,8)}...`);
     return res.json({ ok: true });
   } catch (e) {
+    console.error('[track/plan-click] ❌', e.message);
     return res.json({ ok: false, error: e.message });
   }
 });

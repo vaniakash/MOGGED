@@ -47,6 +47,7 @@ const io = new Server(server, {
 
 app.use(cors(corsOptions));
 app.use(express.json());
+app.use(express.text({ type: 'text/plain' })); // needed for navigator.sendBeacon
 
 // ── MongoDB ────────────────────────────────────────────────────────────────
 if (process.env.MONGODB_URI) {
