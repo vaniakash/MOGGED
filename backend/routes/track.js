@@ -102,4 +102,17 @@ router.post('/plan-click', async (req, res) => {
   }
 });
 
+// GET /api/track/debug-clicks  — DEV ONLY: see what's stored in DB
+router.get('/debug-clicks', async (req, res) => {
+  try {
+    const clicks = await PageView.find(
+      { path: { $regex: '^/pricing/click/' } },
+      { path: 1, sessionId: 1, ts: 1, _id: 0 }
+    ).sort({ ts: -1 }).limit(50);
+    return res.json({ total: clicks.length, clicks });
+  } catch (e) {
+    return res.json({ error: e.message });
+  }
+});
+
 module.exports = router;

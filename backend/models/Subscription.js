@@ -8,9 +8,9 @@ const SubscriptionSchema = new mongoose.Schema({
   amount:       { type: Number, required: true },
   currency:     { type: String, default: 'INR' },
   status:       { type: String, default: 'pending' }, // 'pending' | 'success' | 'failed'
-  payuMihpayid: { type: String, default: null },
-  payuMode:     { type: String, default: null },      // net banking, card, upi, etc.
-  payuResponse: { type: mongoose.Schema.Types.Mixed, default: null }, // full PayU response
+  paypalOrderId:   { type: String, default: null },
+  paypalCaptureId: { type: String, default: null },
+  paypalResponse:  { type: mongoose.Schema.Types.Mixed, default: null }, // full PayPal response
   startDate:    { type: Date, default: null },
   expiryDate:   { type: Date, default: null },
 }, { timestamps: true }); // auto-manages createdAt + updatedAt

@@ -1,86 +1,40 @@
 const express = require('express');
-const crypto  = require('crypto');
-const { v4: uuidv4 } = require('uuid');
+const axios = require('axios');
 const User         = require('../models/User');
 const Subscription = require('../models/Subscription');
 const PageView     = require('../models/PageView');
 
 const router = express.Router();
 
-// ── Config ────────────────────────────────────────────────────────────────────
-const PAYU_KEY      = process.env.PAYU_KEY;
-const PAYU_SALT     = process.env.PAYU_SALT;
-const PAYU_BASE_URL = process.env.PAYU_BASE_URL || 'https://secure.payu.in/_payment';
-const SUCCESS_URL   = process.env.PAYU_SUCCESS_URL || 'http://localhost:3000/payment/success';
-const FAILURE_URL   = process.env.PAYU_FAILURE_URL || 'http://localhost:3000/payment/failure';
-
 // ── Plans ─────────────────────────────────────────────────────────────────────
 const PLANS = {
-  beginner: { id: 'beginner', name: 'Beginner Plan', amount: 249,  currency: 'INR', days: 30 },
-  premium:  { id: 'premium',  name: 'Premium Plan',  amount: 419,  currency: 'INR', days: 30 },
-  pro:      { id: 'pro',      name: 'Pro Plan',       amount: 839,  currency: 'INR', days: 30 },
+  beginner: { id: 'beginner', name: 'Beginner Plan', amount: 1.00,  currency: 'USD', days: 30 },
+  premium:  { id: 'premium',  name: 'Premium Plan',  amount: 4.99,  currency: 'USD', days: 30 },
+  pro:      { id: 'pro',      name: 'Pro Plan',      amount: 9.99,  currency: 'USD', days: 30 },
 };
 
-// ── SHA512 helper ──────────────────────────────────────────────────────────────
-function sha512(str) {
-  return crypto.createHash('sha512').update(str).digest('hex');
+// ── PayPal Helper ──────────────────────────────────────────────────────────────
+async function getPayPalAccessToken() {
+  const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID;
+  const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET;
+  const PAYPAL_ENVIRONMENT = process.env.PAYPAL_ENVIRONMENT || 'sandbox';
+  const baseURL = PAYPAL_ENVIRONMENT === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
+
+  const auth = Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`).toString('base64');
+
+  const response = await axios.post(`${baseURL}/v1/oauth2/token`, 'grant_type=client_credentials', {
+    headers: {
+      Authorization: `Basic ${auth}`,
+      'Content-Type': 'application/x-www-form-urlencoded'
+    }
+  });
+
+  return { access_token: response.data.access_token, baseURL };
 }
 
-// ── Generate PayU initiation hash ─────────────────────────────────────────────
-// Format: key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5||||||SALT
-function generateHash(params) {
-  const str = [
-    PAYU_KEY,
-    params.txnid,
-    params.amount,
-    params.productinfo,
-    params.firstname,
-    params.email,
-    params.udf1 || '',
-    params.udf2 || '',
-    params.udf3 || '',
-    params.udf4 || '',
-    params.udf5 || '',
-    '', '', '', '', '',
-    PAYU_SALT,
-  ].join('|');
-  return sha512(str);
-}
-
-// ── Verify PayU response hash ──────────────────────────────────────────────────
-// Format: SALT|status||||||udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key
-function verifyResponseHash(params) {
-  const str = [
-    PAYU_SALT,
-    params.status,
-    '', '', '', '', '',
-    params.udf5 || '',
-    params.udf4 || '',
-    params.udf3 || '',
-    params.udf2 || '',
-    params.udf1 || '',
-    params.email,
-    params.firstname,
-    params.productinfo,
-    params.amount,
-    params.txnid,
-    PAYU_KEY,
-  ].join('|');
-  return sha512(str);
-}
-
-// ── Check if subscription is active ───────────────────────────────────────────
-function isSubActive(user) {
-  if (!user?.subscription?.status === 'active') return false;
-  if (user.subscription.status !== 'active') return false;
-  if (!user.subscription.expiryDate) return false;
-  return new Date(user.subscription.expiryDate) > new Date();
-}
-
-// ── POST /api/payment/initiate ─────────────────────────────────────────────────
-// Requires: { sessionId, planId, email, name }
-router.post('/initiate', async (req, res) => {
-  const { sessionId, planId, email, name } = req.body;
+// ── POST /api/payment/create-paypal-order ──────────────────────────────────────
+router.post('/create-paypal-order', async (req, res) => {
+  const { sessionId, planId } = req.body;
 
   if (!sessionId || !planId)
     return res.status(400).json({ error: 'Missing sessionId or planId' });
@@ -94,37 +48,7 @@ router.post('/initiate', async (req, res) => {
     if (!user)
       return res.status(404).json({ error: 'User not found. Please log in.' });
 
-    // Allow re-initiation even if already subscribed (for renewal)
-    const txnid       = `OMOGL_${uuidv4().replace(/-/g, '').slice(0, 16).toUpperCase()}`;
-    const amount      = plan.amount.toFixed(2);
-    const productinfo = plan.name;
-    const firstname   = (name || user.displayName || 'Arena Fighter').split(' ')[0];
-    const userEmail   = email || user.email || 'noemail@omogl.com';
-
-    const hashParams = {
-      txnid,
-      amount,
-      productinfo,
-      firstname,
-      email: userEmail,
-      udf1: sessionId,    // store sessionId in udf1 for callback lookup
-      udf2: planId,
-    };
-
-    const hash = generateHash(hashParams);
-
-    // Create pending subscription record
-    await Subscription.create({
-      sessionId,
-      txnId: txnid,
-      planId: plan.id,
-      planName: plan.name,
-      amount: plan.amount,
-      currency: plan.currency,
-      status: 'pending',
-    });
-
-    // ✅ Server-side plan click tracking (guaranteed, never fails silently)
+    // Track plan click
     const ccountry = (
       req.headers['cf-ipcountry'] ||
       req.headers['x-country'] ||
@@ -140,75 +64,94 @@ router.post('/initiate', async (req, res) => {
       ua: (req.headers['user-agent'] || '').slice(0, 200),
     }).catch(() => {});
 
-    return res.json({
-      key:         PAYU_KEY,
-      txnid,
-      amount,
-      productinfo,
-      firstname,
-      email:       userEmail,
-      phone:       '9999999999', // PayU requires phone; use placeholder
-      surl:        SUCCESS_URL,
-      furl:        FAILURE_URL,
-      hash,
-      payuUrl:     PAYU_BASE_URL,
-      udf1:        sessionId,
-      udf2:        planId,
+    // Call PayPal API
+    const { access_token, baseURL } = await getPayPalAccessToken();
+
+    const orderPayload = {
+      intent: 'CAPTURE',
+      purchase_units: [{
+        reference_id: `${planId}_${Date.now()}`,
+        amount: {
+          currency_code: plan.currency,
+          value: plan.amount.toFixed(2)
+        },
+        description: plan.name
+      }]
+    };
+
+    const response = await axios.post(`${baseURL}/v2/checkout/orders`, orderPayload, {
+      headers: {
+        Authorization: `Bearer ${access_token}`,
+        'Content-Type': 'application/json'
+      }
     });
+
+    const orderData = response.data;
+
+    // Create pending subscription record
+    await Subscription.create({
+      sessionId,
+      txnId: orderData.id,
+      planId: plan.id,
+      planName: plan.name,
+      amount: plan.amount,
+      currency: plan.currency,
+      status: 'pending',
+      paypalOrderId: orderData.id
+    });
+
+    return res.json({ id: orderData.id });
   } catch (err) {
-    console.error('[payment/initiate]', err.message);
+    console.error('[payment/create-paypal-order]', err.response?.data || err.message);
     return res.status(500).json({ error: 'Server error. Please try again.' });
   }
 });
 
-// ── POST /api/payment/callback ─────────────────────────────────────────────────
-// PayU posts here after payment (server-to-server + browser redirect)
-// This handles BOTH the S2S webhook and the browser POST-back redirect.
-router.post('/callback', async (req, res) => {
+// ── POST /api/payment/capture-paypal-order ─────────────────────────────────────
+router.post('/capture-paypal-order', async (req, res) => {
+  const { sessionId, orderID } = req.body;
+  if (!sessionId || !orderID) return res.status(400).json({ error: 'Missing sessionId or orderID' });
+
   try {
-    const p = req.body;
-    console.log('[payment/callback] received:', JSON.stringify({ txnid: p.txnid, status: p.status, mihpayid: p.mihpayid }));
+    const { access_token, baseURL } = await getPayPalAccessToken();
 
-    // ── Verify hash ──────────────────────────────────────────────────────────
-    const expectedHash = verifyResponseHash(p);
-    if (expectedHash !== p.hash) {
-      console.error('[payment/callback] Hash mismatch! Possible fraud attempt.');
-      return res.status(400).json({ error: 'Invalid payment response (hash mismatch).' });
-    }
+    const response = await axios.post(`${baseURL}/v2/checkout/orders/${orderID}/capture`, {}, {
+      headers: {
+        Authorization: `Bearer ${access_token}`,
+        'Content-Type': 'application/json'
+      }
+    });
 
-    const sessionId = p.udf1;
-    const planId    = p.udf2;
-    const plan      = PLANS[planId];
+    const captureData = response.data;
+    const subRecord = await Subscription.findOne({ paypalOrderId: orderID, sessionId });
 
-    // ── Find the pending subscription record ─────────────────────────────────
-    const subRecord = await Subscription.findOne({ txnId: p.txnid });
     if (!subRecord) {
-      console.error('[payment/callback] No subscription record found for txnid:', p.txnid);
+      console.error('[payment/capture-paypal-order] No subscription record found for orderID:', orderID);
       return res.status(404).json({ error: 'Transaction not found.' });
     }
 
-    // ── Update audit record ───────────────────────────────────────────────────
-    subRecord.status        = p.status === 'success' ? 'success' : 'failed';
-    subRecord.payuMihpayid  = p.mihpayid;
-    subRecord.payuMode      = p.mode;
-    subRecord.payuResponse  = p;
-
-    if (p.status === 'success' && plan) {
-      const startDate  = new Date();
+    if (captureData.status === 'COMPLETED') {
+      const captureId = captureData.purchase_units[0].payments.captures[0].id;
+      const plan = PLANS[subRecord.planId];
+      
+      const startDate = new Date();
       const expiryDate = new Date(startDate.getTime() + plan.days * 24 * 60 * 60 * 1000);
-      subRecord.startDate  = startDate;
+
+      subRecord.status = 'success';
+      subRecord.paypalCaptureId = captureId;
+      subRecord.paypalResponse = captureData;
+      subRecord.startDate = startDate;
       subRecord.expiryDate = expiryDate;
       await subRecord.save();
 
-      // ── Activate subscription on user ───────────────────────────────────────
       await User.findOneAndUpdate(
         { sessionId },
         {
           $set: {
             'subscription.planId':    plan.id,
             'subscription.planName':  plan.name,
-            'subscription.paymentId': p.mihpayid,
-            'subscription.txnId':     p.txnid,
+            'subscription.paymentId': captureId,
+            'subscription.txnId':     orderID,
             'subscription.status':    'active',
             'subscription.startDate': startDate,
             'subscription.expiryDate': expiryDate,
@@ -217,16 +160,18 @@ router.post('/callback', async (req, res) => {
           },
         }
       );
-      console.log(`[payment/callback] ✅ Subscription activated for session ${sessionId} — ${plan.name}`);
-    } else {
-      await subRecord.save();
-      console.log(`[payment/callback] ❌ Payment failed/cancelled for session ${sessionId}`);
-    }
 
-    // PayU expects a 200 OK for the server-to-server notification
-    return res.status(200).json({ ok: true });
+      console.log(`[payment/capture-paypal-order] ✅ Subscription activated for session ${sessionId} — ${plan.name}`);
+      return res.json({ success: true, captureData });
+    } else {
+      subRecord.status = 'failed';
+      subRecord.paypalResponse = captureData;
+      await subRecord.save();
+      console.log(`[payment/capture-paypal-order] ❌ Payment failed/cancelled for session ${sessionId}`);
+      return res.status(400).json({ error: 'Payment not completed', details: captureData });
+    }
   } catch (err) {
-    console.error('[payment/callback] Error:', err.message);
+    console.error('[payment/capture-paypal-order]', err.response?.data || err.message);
     return res.status(500).json({ error: 'Server error processing payment.' });
   }
 });

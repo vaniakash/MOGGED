@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/lib/auth';
+import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
 
@@ -13,7 +14,7 @@ const PLANS = [
     name: 'Beginner',
     tagline: 'Step into the arena. Prove your looks.',
     priceINR: '₹249',
-    priceUSD: '$2.99',
+    priceUSD: '$1.00',
     period: '/month',
     badge: null,
     color: '#00f5d4',
@@ -24,7 +25,7 @@ const PLANS = [
       '🤖 AI scores your face every single round',
       '🏆 Win/Loss record + monthly prize eligibility',
     ],
-    cta: 'Enter The Arena →',
+    cta: 'Enter The Arena',
   },
   {
     id: 'premium',
@@ -43,7 +44,7 @@ const PLANS = [
       '💬 Stranger chat after matches',
       '📸 Looksmax AI — personalized glow-up roadmap',
     ],
-    cta: 'Go Premium →',
+    cta: 'Go Premium',
   },
   {
     id: 'pro',
@@ -63,7 +64,7 @@ const PLANS = [
       '🎯 Hunter Eyes test — precision attraction scoring',
       '👑 Exclusive Pro badge visible on leaderboard',
     ],
-    cta: 'Go Pro →',
+    cta: 'Go Pro',
   },
 ];
 
@@ -72,8 +73,6 @@ export default function PricingPage() {
   const { user, sessionId, isLoading, hasActiveSub } = useAuth();
   const [initiating, setInitiating] = useState<string | null>(null);
   const [error, setError] = useState('');
-  const formRef = useRef<HTMLFormElement>(null);
-  const [payuData, setPayuData] = useState<Record<string, string> | null>(null);
 
   // Redirect to arena if already subscribed
   useEffect(() => {
@@ -89,13 +88,6 @@ export default function PricingPage() {
     }
   }, [isLoading, user, router]);
 
-  // Auto-submit PayU form when payuData is set
-  useEffect(() => {
-    if (payuData && formRef.current) {
-      formRef.current.submit();
-    }
-  }, [payuData]);
-
   async function handleSelectPlan(planId: string) {
     if (!sessionId || !user) {
       router.push('/login?redirect=/pricing');
@@ -103,17 +95,15 @@ export default function PricingPage() {
     }
     setInitiating(planId);
     setError('');
-    // ✅ Track plan click — keepalive:true ensures it survives page unload/navigation
-    // sendBeacon is the most reliable fallback for analytics during page transitions
+
+    // ✅ Track plan click using sendBeacon
     try {
       const trackPayload = JSON.stringify({ planId, sessionId });
       const trackUrl = `${BACKEND_URL}/api/track/plan-click`;
-      if (navigator.sendBeacon) {
-        // sendBeacon: fire-and-forget, guaranteed to complete even during unload
-        const blob = new Blob([trackPayload], { type: 'application/json' });
+      if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+        const blob = new Blob([trackPayload], { type: 'text/plain' });
         navigator.sendBeacon(trackUrl, blob);
       } else {
-        // keepalive: fetch stays alive even after page navigates away
         fetch(trackUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -122,287 +112,300 @@ export default function PricingPage() {
         }).catch(() => {});
       }
     } catch {}
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/payment/initiate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sessionId,
-          planId,
-          email: user.email,
-          name: user.displayName,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Payment initiation failed.');
-      // Build the PayU form data and trigger auto-submit
-      setPayuData(data);
-    } catch (e: any) {
-      setError(e.message || 'Something went wrong. Please try again.');
-      setInitiating(null);
-    }
   }
 
   if (isLoading || !user) return null;
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: '#050508',
-      fontFamily: "'Inter', sans-serif",
-      position: 'relative',
-      overflow: 'hidden',
-    }}>
-      {/* Background glows */}
-      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
-        <div style={{ position: 'absolute', top: '10%', left: '20%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(168,85,247,0.1) 0%, transparent 70%)', filter: 'blur(40px)' }} />
-        <div style={{ position: 'absolute', bottom: '20%', right: '15%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,45,120,0.08) 0%, transparent 70%)', filter: 'blur(40px)' }} />
-        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 600, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,245,212,0.05) 0%, transparent 70%)', filter: 'blur(60px)' }} />
-      </div>
-
-      <div style={{ position: 'relative', zIndex: 1, maxWidth: 1100, margin: '0 auto', padding: '48px 20px 80px' }}>
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: 56 }}>
-          <a href="/" style={{ display: 'inline-block', marginBottom: 32 }}>
-            <img src="/logo.png" alt="Omogl" style={{ height: 52, objectFit: 'contain' }} />
-          </a>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8,
-              background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.25)',
-              borderRadius: 99, padding: '6px 16px', marginBottom: 20,
-              fontSize: 12, fontWeight: 700, color: '#a855f7',
-              letterSpacing: '0.08em', textTransform: 'uppercase',
-            }}>
-              ⚔️ One Step Away From The Arena
-            </div>
-
-            <h1 style={{
-              fontFamily: 'Bebas Neue, cursive',
-              fontSize: 'clamp(44px, 7vw, 80px)',
-              lineHeight: 1,
-              color: '#f8fafc',
-              marginBottom: 16,
-              letterSpacing: '0.02em',
-            }}>
-              Choose Your Battle Plan
-            </h1>
-            <p style={{
-              color: '#64748b',
-              fontSize: 'clamp(14px, 2vw, 17px)',
-              maxWidth: 520,
-              margin: '0 auto',
-              lineHeight: 1.7,
-            }}>
-              Pick a plan to unlock the arena. Cancel anytime. No face data is stored after analysis.
-            </p>
-          </motion.div>
+    <PayPalScriptProvider options={{ clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || 'test', currency: 'USD' }}>
+      <div style={{
+        minHeight: '100vh',
+        background: '#050508',
+        fontFamily: "'Inter', sans-serif",
+        position: 'relative',
+        overflow: 'hidden',
+      }}>
+        {/* Background glows */}
+        <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
+          <div style={{ position: 'absolute', top: '10%', left: '20%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(168,85,247,0.1) 0%, transparent 70%)', filter: 'blur(40px)' }} />
+          <div style={{ position: 'absolute', bottom: '20%', right: '15%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,45,120,0.08) 0%, transparent 70%)', filter: 'blur(40px)' }} />
+          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 600, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,245,212,0.05) 0%, transparent 70%)', filter: 'blur(60px)' }} />
         </div>
 
-        {/* 🏆 Monthly Championship Prize Banner */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.15 }}
-          style={{
-            background: 'linear-gradient(135deg, rgba(251,191,36,0.08) 0%, rgba(168,85,247,0.08) 100%)',
-            border: '1px solid rgba(251,191,36,0.25)',
-            borderRadius: 20, padding: '24px 28px', marginBottom: 40,
-            display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap',
-            justifyContent: 'center',
-          }}
-        >
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 32, marginBottom: 4 }}>🏆</div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: '#fbbf24', marginBottom: 2 }}>
-              Monthly ELO Championship
-            </div>
-            <div style={{ fontSize: 12, color: '#64748b' }}>
-              Top ranked fighters earn real prizes every month
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
-            {[
-              { rank: '🥇 1st Place', prize: '$150 USD', color: '#fbbf24', bg: 'rgba(251,191,36,0.1)' },
-              { rank: '🥈 2nd Place', prize: '$100 USD', color: '#94a3b8', bg: 'rgba(148,163,184,0.1)' },
-              { rank: '🥉 3rd Place', prize: '$80 USD',  color: '#c97c2e', bg: 'rgba(201,124,46,0.1)' },
-            ].map(p => (
-              <div key={p.rank} style={{
-                background: p.bg, border: `1px solid ${p.color}44`,
-                borderRadius: 14, padding: '12px 20px', textAlign: 'center', minWidth: 110,
+        <div style={{ position: 'relative', zIndex: 1, maxWidth: 1100, margin: '0 auto', padding: '48px 20px 80px' }}>
+          {/* Header */}
+          <div style={{ textAlign: 'center', marginBottom: 56 }}>
+            <a href="/" style={{ display: 'inline-block', marginBottom: 32 }}>
+              <img src="/logo.png" alt="Omogl" style={{ height: 52, objectFit: 'contain' }} />
+            </a>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.25)',
+                borderRadius: 99, padding: '6px 16px', marginBottom: 20,
+                fontSize: 12, fontWeight: 700, color: '#a855f7',
+                letterSpacing: '0.08em', textTransform: 'uppercase',
               }}>
-                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>{p.rank}</div>
-                <div style={{ fontSize: 20, fontWeight: 900, color: p.color }}>{p.prize}</div>
+                ⚔️ One Step Away From The Arena
               </div>
+
+              <h1 style={{
+                fontFamily: 'Bebas Neue, cursive',
+                fontSize: 'clamp(44px, 7vw, 80px)',
+                lineHeight: 1,
+                color: '#f8fafc',
+                marginBottom: 16,
+                letterSpacing: '0.02em',
+              }}>
+                Choose Your Battle Plan
+              </h1>
+              <p style={{
+                color: '#64748b',
+                fontSize: 'clamp(14px, 2vw, 17px)',
+                maxWidth: 520,
+                margin: '0 auto',
+                lineHeight: 1.7,
+              }}>
+                Pick a plan to unlock the arena. Cancel anytime. No face data is stored after analysis.
+              </p>
+            </motion.div>
+          </div>
+
+          {/* 🏆 Monthly Championship Prize Banner */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.15 }}
+            style={{
+              background: 'linear-gradient(135deg, rgba(251,191,36,0.08) 0%, rgba(168,85,247,0.08) 100%)',
+              border: '1px solid rgba(251,191,36,0.25)',
+              borderRadius: 20, padding: '24px 28px', marginBottom: 40,
+              display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap',
+              justifyContent: 'center',
+            }}
+          >
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 32, marginBottom: 4 }}>🏆</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#fbbf24', marginBottom: 2 }}>
+                Monthly ELO Championship
+              </div>
+              <div style={{ fontSize: 12, color: '#64748b' }}>
+                Top ranked fighters earn real prizes every month
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+              {[
+                { rank: '🥇 1st Place', prize: '$150 USD', color: '#fbbf24', bg: 'rgba(251,191,36,0.1)' },
+                { rank: '🥈 2nd Place', prize: '$100 USD', color: '#94a3b8', bg: 'rgba(148,163,184,0.1)' },
+                { rank: '🥉 3rd Place', prize: '$80 USD',  color: '#c97c2e', bg: 'rgba(201,124,46,0.1)' },
+              ].map(p => (
+                <div key={p.rank} style={{
+                  background: p.bg, border: `1px solid ${p.color}44`,
+                  borderRadius: 14, padding: '12px 20px', textAlign: 'center', minWidth: 110,
+                }}>
+                  <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>{p.rank}</div>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: p.color }}>{p.prize}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ fontSize: 11, color: '#334155', textAlign: 'center', width: '100%' }}>
+              Any active plan qualifies you for the monthly championship · Winners paid via PayPal
+            </div>
+          </motion.div>
+
+          {/* Plan Cards */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))',
+            gap: 20,
+            marginBottom: 32,
+          }}>
+            {PLANS.map((plan, i) => (
+              <motion.div
+                key={plan.id}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1, duration: 0.5 }}
+                style={{
+                  position: 'relative',
+                  borderRadius: 24,
+                  border: `1px solid ${plan.id === 'premium' ? 'rgba(168,85,247,0.5)' : 'rgba(255,255,255,0.08)'}`,
+                  background: plan.id === 'premium'
+                    ? 'linear-gradient(160deg, rgba(168,85,247,0.08) 0%, rgba(13,13,20,1) 60%)'
+                    : 'rgba(255,255,255,0.02)',
+                  overflow: 'hidden',
+                  boxShadow: plan.id === 'premium' ? `0 0 60px ${plan.glow}` : 'none',
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
+                {/* Badge */}
+                {plan.badge && (
+                  <div style={{
+                    position: 'absolute', top: 0, right: 0,
+                    background: plan.id === 'premium'
+                      ? 'linear-gradient(135deg, #a855f7, #7c3aed)'
+                      : 'linear-gradient(135deg, #ff2d78, #c4004a)',
+                    padding: '5px 16px',
+                    borderBottomLeftRadius: 12,
+                    fontSize: 10, fontWeight: 800, color: '#fff',
+                    letterSpacing: '0.1em',
+                  }}>
+                    {plan.badge}
+                  </div>
+                )}
+
+                <div style={{ padding: '32px 28px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  {/* Plan name & price */}
+                  <div style={{ marginBottom: 24 }}>
+                    <div style={{
+                      fontSize: 12, fontWeight: 700, color: plan.color,
+                      letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6,
+                    }}>
+                      {plan.name}
+                    </div>
+                    <div style={{ fontSize: 13, color: '#475569', marginBottom: 12, lineHeight: 1.5, fontStyle: 'italic' }}>
+                      {(plan as any).tagline}
+                    </div>
+                    
+                    {/* USD = primary big price for PayPal */}
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                      <span style={{
+                        fontFamily: 'Bebas Neue, cursive',
+                        fontSize: 52,
+                        color: '#f8fafc',
+                        lineHeight: 1,
+                      }}>
+                        {plan.priceUSD}
+                      </span>
+                      <span style={{ color: '#475569', fontSize: 14 }}>{plan.period}</span>
+                    </div>
+                    {/* INR = small secondary reference */}
+                    <div style={{ color: '#334155', fontSize: 12, marginTop: 5, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{
+                        background: 'rgba(255,255,255,0.04)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        borderRadius: 6, padding: '2px 8px', fontSize: 11, color: '#475569',
+                      }}>
+                        ≈ {(plan as any).priceINR} INR
+                      </span>
+                      <span style={{ color: '#1e293b' }}>· billed in USD via PayPal</span>
+                    </div>
+                  </div>
+
+                  {/* Divider */}
+                  <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', marginBottom: 24 }} />
+
+                  {/* Features */}
+                  <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {plan.features.map(f => (
+                      <li key={f} style={{ color: '#94a3b8', fontSize: 14, display: 'flex', gap: 10 }}>
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* CTA */}
+                  <div style={{ marginTop: 28, position: 'relative', minHeight: 45 }}>
+                    {initiating === plan.id ? (
+                      <div style={{ position: 'relative', zIndex: 10, background: '#fff', padding: 10, borderRadius: 8 }}>
+                        <PayPalButtons
+                          createOrder={async () => {
+                            try {
+                              const res = await fetch(`${BACKEND_URL}/api/payment/create-paypal-order`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ sessionId, planId: plan.id }),
+                              });
+                              const data = await res.json();
+                              if (!res.ok) throw new Error(data.error || 'Payment initiation failed.');
+                              return data.id; // Return order ID to PayPal
+                            } catch (err: any) {
+                              setError(err.message || 'Payment failed to initiate.');
+                              setInitiating(null);
+                              throw err;
+                            }
+                          }}
+                          onApprove={async (data, actions) => {
+                            try {
+                              const res = await fetch(`${BACKEND_URL}/api/payment/capture-paypal-order`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ sessionId, orderID: data.orderID }),
+                              });
+                              const captureData = await res.json();
+                              if (!res.ok) throw new Error(captureData.error || 'Payment capture failed.');
+                              // Redirect to battle
+                              router.replace('/battle');
+                            } catch (err: any) {
+                              setError(err.message || 'Payment capture failed.');
+                              setInitiating(null);
+                            }
+                          }}
+                          onCancel={() => {
+                            setInitiating(null);
+                          }}
+                          onError={(err) => {
+                            setError('PayPal encountered an error.');
+                            setInitiating(null);
+                          }}
+                          style={{ layout: 'vertical', color: 'blue', shape: 'rect', label: 'pay', height: 40 }}
+                        />
+                      </div>
+                    ) : (
+                      <button
+                        id={`plan-${plan.id}-btn`}
+                        onClick={() => handleSelectPlan(plan.id)}
+                        disabled={!!initiating}
+                        style={{
+                          width: '100%', padding: '14px',
+                          borderRadius: 12,
+                          background: plan.id === 'premium'
+                            ? 'linear-gradient(135deg, #a855f7, #7c3aed)'
+                            : plan.id === 'pro'
+                              ? 'linear-gradient(135deg, #ff2d78, #c4004a)'
+                              : `linear-gradient(135deg, ${plan.color}22, ${plan.color}44)`,
+                          color: plan.id === 'beginner' ? plan.color : '#fff',
+                          border: plan.id === 'beginner' ? `1px solid ${plan.color}44` : 'none',
+                          fontWeight: 800, fontSize: 15,
+                          cursor: initiating ? 'not-allowed' : 'pointer',
+                          fontFamily: 'inherit',
+                          transition: 'all 0.2s',
+                          boxShadow: plan.id === 'premium' ? '0 4px 24px rgba(168,85,247,0.3)' : 'none',
+                        }}
+                      >
+                        {`${plan.cta} →`}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
             ))}
           </div>
-          <div style={{ fontSize: 11, color: '#334155', textAlign: 'center', width: '100%' }}>
-            Any active plan qualifies you for the monthly championship · Winners paid via PayPal/UPI
+
+          {/* Error */}
+          {error && (
+            <div style={{
+              textAlign: 'center', padding: '14px 20px', borderRadius: 12,
+              background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)',
+              color: '#f87171', fontSize: 14, marginBottom: 24,
+            }}>
+              ⚠️ {error}
+            </div>
+          )}
+
+          {/* Footer notes */}
+          <div style={{ textAlign: 'center', color: '#334155', fontSize: 13, lineHeight: 1.8 }}>
+            <p>🔒 Secure payments via PayPal • 30-day subscription • Cancel anytime</p>
+            <p>All prices are in USD · INR shown for reference only · Payment processed via PayPal</p>
           </div>
-        </motion.div>
-
-        {/* Plan Cards */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))',
-          gap: 20,
-          marginBottom: 32,
-        }}>
-          {PLANS.map((plan, i) => (
-            <motion.div
-              key={plan.id}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1, duration: 0.5 }}
-              style={{
-                position: 'relative',
-                borderRadius: 24,
-                border: `1px solid ${plan.id === 'premium' ? 'rgba(168,85,247,0.5)' : 'rgba(255,255,255,0.08)'}`,
-                background: plan.id === 'premium'
-                  ? 'linear-gradient(160deg, rgba(168,85,247,0.08) 0%, rgba(13,13,20,1) 60%)'
-                  : 'rgba(255,255,255,0.02)',
-                overflow: 'hidden',
-                boxShadow: plan.id === 'premium' ? `0 0 60px ${plan.glow}` : 'none',
-                display: 'flex',
-                flexDirection: 'column',
-              }}
-            >
-              {/* Badge */}
-              {plan.badge && (
-                <div style={{
-                  position: 'absolute', top: 0, right: 0,
-                  background: plan.id === 'premium'
-                    ? 'linear-gradient(135deg, #a855f7, #7c3aed)'
-                    : 'linear-gradient(135deg, #ff2d78, #c4004a)',
-                  padding: '5px 16px',
-                  borderBottomLeftRadius: 12,
-                  fontSize: 10, fontWeight: 800, color: '#fff',
-                  letterSpacing: '0.1em',
-                }}>
-                  {plan.badge}
-                </div>
-              )}
-
-              <div style={{ padding: '32px 28px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                {/* Plan name & price */}
-                <div style={{ marginBottom: 24 }}>
-                  <div style={{
-                    fontSize: 12, fontWeight: 700, color: plan.color,
-                    letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6,
-                  }}>
-                    {plan.name}
-                  </div>
-                  <div style={{ fontSize: 13, color: '#475569', marginBottom: 12, lineHeight: 1.5, fontStyle: 'italic' }}>
-                    {(plan as any).tagline}
-                  </div>
-                  {/* INR = primary big price */}
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                    <span style={{
-                      fontFamily: 'Bebas Neue, cursive',
-                      fontSize: 52,
-                      color: '#f8fafc',
-                      lineHeight: 1,
-                    }}>
-                      {plan.priceINR}
-                    </span>
-                    <span style={{ color: '#475569', fontSize: 14 }}>{plan.period}</span>
-                  </div>
-                  {/* USD = small secondary reference */}
-                  <div style={{ color: '#334155', fontSize: 12, marginTop: 5, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{
-                      background: 'rgba(255,255,255,0.04)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: 6, padding: '2px 8px', fontSize: 11, color: '#475569',
-                    }}>
-                      ≈ {(plan as any).priceUSD} USD
-                    </span>
-                    <span style={{ color: '#1e293b' }}>· billed in INR via PayU</span>
-                  </div>
-                </div>
-
-                {/* Divider */}
-                <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', marginBottom: 24 }} />
-
-                {/* Features */}
-                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {plan.features.map(f => (
-                    <li key={f} style={{ color: '#94a3b8', fontSize: 14, display: 'flex', gap: 10 }}>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-
-                {/* CTA */}
-                <button
-                  id={`plan-${plan.id}-btn`}
-                  onClick={() => handleSelectPlan(plan.id)}
-                  disabled={!!initiating}
-                  style={{
-                    marginTop: 28,
-                    width: '100%', padding: '14px',
-                    borderRadius: 12,
-                    background: initiating === plan.id
-                      ? 'rgba(168,85,247,0.3)'
-                      : plan.id === 'premium'
-                        ? 'linear-gradient(135deg, #a855f7, #7c3aed)'
-                        : plan.id === 'pro'
-                          ? 'linear-gradient(135deg, #ff2d78, #c4004a)'
-                          : `linear-gradient(135deg, ${plan.color}22, ${plan.color}44)`,
-                    color: plan.id === 'beginner' ? plan.color : '#fff',
-                    border: plan.id === 'beginner' ? `1px solid ${plan.color}44` : 'none',
-                    fontWeight: 800, fontSize: 15,
-                    cursor: initiating ? 'not-allowed' : 'pointer',
-                    fontFamily: 'inherit',
-                    transition: 'all 0.2s',
-                    boxShadow: plan.id === 'premium' && !initiating ? '0 4px 24px rgba(168,85,247,0.3)' : 'none',
-                  }}
-                >
-                  {initiating === plan.id ? '⏳ Redirecting to PayU…' : `${plan.cta} →`}
-                </button>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Error */}
-        {error && (
-          <div style={{
-            textAlign: 'center', padding: '14px 20px', borderRadius: 12,
-            background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)',
-            color: '#f87171', fontSize: 14, marginBottom: 24,
-          }}>
-            ⚠️ {error}
-          </div>
-        )}
-
-        {/* Footer notes */}
-        <div style={{ textAlign: 'center', color: '#334155', fontSize: 13, lineHeight: 1.8 }}>
-          <p>🔒 Secure payments via PayU • 30-day subscription • Cancel anytime</p>
-          <p>All prices are in Indian Rupees (INR) · USD shown for reference only · Payment processed via PayU</p>
         </div>
       </div>
-
-      {/* Hidden PayU auto-submit form */}
-      {payuData && (
-        <form
-          ref={formRef}
-          method="post"
-          action={payuData.payuUrl}
-          style={{ display: 'none' }}
-        >
-          {['key','txnid','amount','productinfo','firstname','email','phone',
-            'surl','furl','hash','udf1','udf2'].map(field =>
-            payuData[field] ? (
-              <input key={field} type="hidden" name={field} value={payuData[field]} />
-            ) : null
-          )}
-        </form>
-      )}
-    </div>
+    </PayPalScriptProvider>
   );
 }

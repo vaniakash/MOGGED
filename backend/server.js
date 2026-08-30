@@ -505,6 +505,51 @@ app.post('/api/track/pageview', async (req, res) => {
   }
 });
 
+// ── Plan click tracking ─────────────────────────────────────────────────────
+// Called when a user clicks a pricing plan button.
+// Uses sendBeacon (text/plain) so it survives page navigation.
+app.post('/api/track/plan-click', async (req, res) => {
+  try {
+    // sendBeacon sends body as text/plain — parse it if needed
+    let body = req.body;
+    if (typeof body === 'string') {
+      try { body = JSON.parse(body); } catch { body = {}; }
+    }
+    const { planId, sessionId } = body || {};
+    if (!planId) return res.json({ ok: false, reason: 'no planId' });
+
+    const countryCode = (req.headers['cf-ipcountry'] || req.headers['x-country'] || 'Unknown').toUpperCase().slice(0,2);
+    const ip = req.headers['cf-connecting-ip'] || (req.headers['x-forwarded-for']||'').split(',')[0] || req.ip;
+
+    await PageView.create({
+      path: `/pricing/click/${planId}`,
+      sessionId: sessionId || null,
+      country:     countryCode !== 'XX' && countryCode !== 'Un' ? countryCode : 'Unknown',
+      countryName: COUNTRY_NAMES[countryCode] || countryCode,
+      ip,
+      ua: (req.headers['user-agent'] || '').slice(0, 200),
+    });
+    console.log(`[track/plan-click] ✅ planId=${planId} sessionId=${String(sessionId||'').slice(0,8)}`);
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error('[track/plan-click] ❌', e.message);
+    return res.json({ ok: false, error: e.message });
+  }
+});
+
+// GET /api/track/debug-clicks — shows all stored plan clicks (dev tool)
+app.get('/api/track/debug-clicks', async (req, res) => {
+  try {
+    const clicks = await PageView.find(
+      { path: { $regex: '^/pricing/click/' } },
+      { path: 1, sessionId: 1, ts: 1, _id: 0 }
+    ).sort({ ts: -1 }).limit(50);
+    return res.json({ total: clicks.length, clicks });
+  } catch (e) {
+    return res.json({ error: e.message });
+  }
+});
+
 
 // ── Leaderboard ────────────────────────────────────────────────────────────
 app.get('/api/leaderboard', async (_, res) => {

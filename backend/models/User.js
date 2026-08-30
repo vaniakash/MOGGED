@@ -31,8 +31,8 @@ const UserSchema = new mongoose.Schema({
   subscription: {
     planId:     { type: String, default: null },      // 'beginner' | 'premium' | 'pro'
     planName:   { type: String, default: null },
-    paymentId:  { type: String, default: null },      // PayU mihpayid
-    txnId:      { type: String, default: null },      // our generated txnid
+    paymentId:  { type: String, default: null },      // PayPal Capture ID
+    txnId:      { type: String, default: null },      // PayPal Order ID
     status:     { type: String, default: 'none' },    // 'none' | 'active' | 'expired'
     startDate:  { type: Date,   default: null },
     expiryDate: { type: Date,   default: null },
