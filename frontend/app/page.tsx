@@ -1,6 +1,7 @@
 // Server Component — no 'use client'. Exports metadata, renders crawlable HTML.
 import type { Metadata } from 'next';
 import HomepageHero from '@/components/HomepageHero';
+import GlobalChat from '@/components/GlobalChat';
 
 export const metadata: Metadata = {
   title: 'Omogl — Face Battle Arena | Get Mogged Online',
@@ -127,6 +128,9 @@ export default function HomePage() {
           <a href="/terms" style={{ color: '#a855f7', textDecoration: 'none' }}>Terms of Use</a>
         </div>
       </footer>
+
+      {/* ── GLOBAL CHAT WIDGET ── */}
+      <GlobalChat />
     </main>
   );
 }

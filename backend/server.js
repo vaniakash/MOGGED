@@ -83,6 +83,7 @@ const socketToChatRoom = new Map();
 const socketToSession = new Map();
 const roomTimers      = new Map();
 const privateRooms    = new Map();
+const globalChatHistory = [];
 
 const COUNTDOWN_SECS = 10;
 
@@ -742,6 +743,27 @@ async function resolveMatch(roomId) {
 // ── SOCKET.IO ──────────────────────────────────────────────────────────────
 io.on('connection', (socket) => {
   console.log(`🔌 Connected: ${socket.id}`);
+
+  // Send current global chat history to the new user
+  socket.emit('global_chat_history', globalChatHistory);
+
+  // ── GLOBAL CHAT ─────────────────────────────────────────────────────────
+  socket.on('send_global_chat', (data) => {
+    // data: { user: string, text: string }
+    const msg = {
+      id: uuidv4(),
+      user: (data.user || 'Anonymous').slice(0, 32),
+      text: (data.text || '').slice(0, 200),
+      timestamp: Date.now()
+    };
+    
+    globalChatHistory.push(msg);
+    if (globalChatHistory.length > 50) {
+      globalChatHistory.shift();
+    }
+    
+    io.emit('receive_global_chat', msg);
+  });
 
   // ── PRIVATE ROOM — Create ───────────────────────────────────────────────
   socket.on('create_private_room', ({ sessionId }) => {
