@@ -173,38 +173,8 @@ export default function HomepageHero() {
   function handleEnterArena() {
     // Fire-and-forget: track the arena button press
     fetch(`${BACKEND_URL}/api/arena/press`, { method: 'POST' }).catch(() => {});
-
-    if (!user) {
-      // Not logged in → send to login, then to pricing
-      router.push('/login?redirect=/pricing');
-      return;
-    }
-
-    // Check subscription using auth context
-    const sub = user.subscription;
-    const hasActive = user.hasActiveSub === true ||
-      (sub?.status === 'active' && sub?.expiryDate && new Date(sub.expiryDate) > new Date());
-
-    // If profile complete and subscribed → go directly to battle
-    if (hasActive && user.profileComplete) {
-      router.push('/battle');
-      return;
-    }
-
-    // If profile NOT complete → show profile form first
-    if (!user.profileComplete) {
-      setPUsername(user.displayName || '');
-      setPNationality(user.nationality || '');
-      setPAge('');
-      setPGender(user.gender || '');
-      setModalStep('profile');
-      return;
-    }
-
-    // Logged in, profile complete, NOT subscribed → show arena onboard modal
-    setOnboardNationality(user.nationality || '');
-    setOnboardGender(user.gender || '');
-    setModalStep('arena-onboard');
+    
+    window.location.href = 'https://www.eromify.in/tools/creator';
   }
 
   // ── Arena onboard: save profile updates + route ──────────────────────────
